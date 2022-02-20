@@ -1,0 +1,44 @@
+server:
+  port: 8082
+  error.include-message: always
+
+springdoc:
+  swagger-ui.path: /swagger-ui.html
+  api-docs.path: /openapi/v3/api-docs
+  pathsToMatch: /**
+  packagesToScan: com.i3market
+
+delayTime:
+  getElementDelayTime: 1
+
+api:
+  common:
+    version: 1.0.0
+    title: I3 Market Semantic Engine API
+    description: This is Semantic Engine of i3 Market Project
+    termsOfService: i3-Market Service
+    license: i3-Market License
+    licenseUrl: https://www.i3-market.eu/
+    externalDocDesc: https://www.i3-market.eu/
+    externalDocUrl: https://www.i3-market.eu/
+    contact:
+      name: Chi H Le
+      url:
+      email: chi-hung.le@insight-centre.org
+---
+spring:
+  application:
+    name: SEMANTIC-ENGINE-SERVICE
+---
+spring.data.mongodb:
+  host: localhost
+  port: 27017
+  database: semantic-engine-database
+  auto-index-creation: true
+---
+category-list:
+  url: http://95.211.3.244:7500/data_categoriesdocker-compose.yml
+
+---
+spring.config.activate.on-profile: docker
+spring.data.mongodb.host: mongodb
