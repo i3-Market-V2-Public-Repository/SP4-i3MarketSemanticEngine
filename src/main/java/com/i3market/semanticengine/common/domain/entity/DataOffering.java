@@ -4,6 +4,7 @@ import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
@@ -37,6 +38,10 @@ public class DataOffering implements Serializable {
 
     @ToString.Include
     String status;
+
+    @ToString.Include
+    @Version
+    int version;
 
     @ToString.Include
     @CreatedDate

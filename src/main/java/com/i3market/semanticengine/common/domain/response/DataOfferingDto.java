@@ -45,6 +45,9 @@ public class DataOfferingDto {
     String dataOfferingExpirationTime;
 
     @ToString.Include
+    int version;
+
+    @ToString.Include
     String createdAt;
 
     @ToString.Include

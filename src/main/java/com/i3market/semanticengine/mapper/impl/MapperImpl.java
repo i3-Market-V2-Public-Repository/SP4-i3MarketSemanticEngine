@@ -19,9 +19,6 @@ import static java.util.Objects.isNull;
 public class MapperImpl implements Mapper {
     @Override
     public DataProviderEntity dtoToEntity(final DataProviderDto dto) {
-
-        System.out.println(isNull(dto.getOrganization()));
-
         if (isNull(dto.getOrganization())) {
             return DataProviderEntity.builder()
                     .providerId(dto.getProviderId())
@@ -32,7 +29,7 @@ public class MapperImpl implements Mapper {
 
         final List<OrganizationEntity> organizationEntities = dto.getOrganization()
                 .stream()
-                .map(e -> dtoToEntity(e))
+                .map(this::dtoToEntity)
                 .collect(Collectors.toList());
 
         return DataProviderEntity.builder()
@@ -57,7 +54,7 @@ public class MapperImpl implements Mapper {
 
         final List<OrganizationDto> organizationDtos = entity.getOrganization()
                 .stream()
-                .map(e -> entityToDto(e))
+                .map(this::entityToDto)
                 .collect(Collectors.toList());
         return DataProviderDto.builder()
                 .providerId(entity.getProviderId())
@@ -205,11 +202,11 @@ public class MapperImpl implements Mapper {
 
     private Dataset requestToEntity(final RequestDataset request) {
         final var distributionList = request.getDistribution()
-                .parallelStream().map(e -> requestToEntity(e))
+                .parallelStream().map(this::requestToEntity)
                 .collect(Collectors.toList());
 
         final var datsetInforlationList = request.getDatasetInformation()
-                .parallelStream().map(e -> requestToEntity(e))
+                .parallelStream().map(this::requestToEntity)
                 .collect(Collectors.toList());
 
         return Dataset.builder()
@@ -278,6 +275,7 @@ public class MapperImpl implements Mapper {
                 .category(entity.getCategory())
                 .status(entity.getStatus())
                 .dataOfferingExpirationTime(entity.getDataOfferingExpirationTime())
+                .version(entity.getVersion())
                 .contractParameters(entityToDto(entity.getContractParameters()))
                 .hasPricingModel(entityToDto(entity.getHasPricingModel()))
                 .hasDataset(entityToDto(entity.getHasDataset()))
@@ -375,11 +373,11 @@ public class MapperImpl implements Mapper {
     private DatasetDto entityToDto(final Dataset entity) {
 
         final var distributionList = entity.getDistribution()
-                .parallelStream().map(e -> entityToDto(e))
+                .parallelStream().map(this::entityToDto)
                 .collect(Collectors.toList());
 
         final var datasetInformation = entity.getDatasetInformation()
-                .parallelStream().map(e -> entityToDto(e))
+                .parallelStream().map(this::entityToDto)
                 .collect(Collectors.toList());
 
         return DatasetDto.builder()
