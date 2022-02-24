@@ -78,6 +78,8 @@ public class RequestDataset {
     @Schema(example = "required", required = true, type = "String")
     String temporalResolution;
 
+    List<String> theme = new ArrayList<>();
+
     @NotNull(message = "distribution is required")
     List<RequestDistribution> distribution = new ArrayList<>();
 

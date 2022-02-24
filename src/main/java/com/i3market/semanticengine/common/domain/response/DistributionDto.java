@@ -1,9 +1,13 @@
 package com.i3market.semanticengine.common.domain.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import lombok.Builder;
 import lombok.Value;
+
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 @Value
 @Builder(builderClassName = "Builder", toBuilder = true)
@@ -12,6 +16,7 @@ import lombok.Value;
 public class DistributionDto {
 
     @lombok.Builder.Default
+    @JsonIgnore
     String type = "http://www.w3.org/ns/dcat#Distribution";
 
     String title;
@@ -31,4 +36,9 @@ public class DistributionDto {
     String packageFormat;
 
     AccessServiceDto accessService;
+
+    @JsonPOJOBuilder(withPrefix = EMPTY)
+    public static class Builder {
+
+    }
 }

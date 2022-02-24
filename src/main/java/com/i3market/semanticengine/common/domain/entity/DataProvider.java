@@ -1,4 +1,4 @@
-package com.i3market.semanticengine.common.domain;
+package com.i3market.semanticengine.common.domain.entity;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
@@ -18,8 +18,8 @@ import java.util.List;
 @ToString(onlyExplicitlyIncluded = true)
 @Document(collection = "data_provider_t")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class DataProviderEntity implements Serializable {
-    
+public class DataProvider implements Serializable {
+
 
     @Id
     String id;

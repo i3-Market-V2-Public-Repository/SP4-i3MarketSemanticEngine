@@ -21,8 +21,8 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 public class RequestNewDataOffering {
 
     @NotNull(message = "provider is required")
-//    @NotBlank(message = "provider is required")
-//    @NotEmpty(message = "provider is required")
+    @NotBlank(message = "provider is required")
+    @NotEmpty(message = "provider is required")
     @Schema(example = "required", required = true, type = "String")
     String provider;
 

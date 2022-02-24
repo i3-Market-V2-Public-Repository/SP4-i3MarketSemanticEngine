@@ -1,9 +1,5 @@
 package com.i3market.semanticengine.mapper.impl;
 
-import com.i3market.semanticengine.common.domain.DataProviderDto;
-import com.i3market.semanticengine.common.domain.DataProviderEntity;
-import com.i3market.semanticengine.common.domain.OrganizationDto;
-import com.i3market.semanticengine.common.domain.OrganizationEntity;
 import com.i3market.semanticengine.common.domain.entity.*;
 import com.i3market.semanticengine.common.domain.request.*;
 import com.i3market.semanticengine.common.domain.response.*;
@@ -17,31 +13,33 @@ import static java.util.Objects.isNull;
 
 @Component
 public class MapperImpl implements Mapper {
+
     @Override
-    public DataProviderEntity dtoToEntity(final DataProviderDto dto) {
-        if (isNull(dto.getOrganization())) {
-            return DataProviderEntity.builder()
-                    .providerId(dto.getProviderId())
-                    .name(dto.getName())
-                    .description(dto.getDescription())
+    public DataProvider requestToEntity(final RequestDataProvider request) {
+
+        if (isNull(request.getOrganization())) {
+            return DataProvider.builder()
+                    .providerId(request.getProviderId().toLowerCase())
+                    .name(request.getName())
+                    .description(request.getDescription())
                     .build();
         }
 
-        final List<OrganizationEntity> organizationEntities = dto.getOrganization()
+        final List<OrganizationEntity> organizationEntities = request.getOrganization()
                 .stream()
-                .map(this::dtoToEntity)
+                .map(this::requestToEntity)
                 .collect(Collectors.toList());
 
-        return DataProviderEntity.builder()
-                .providerId(dto.getProviderId())
-                .name(dto.getName())
-                .description(dto.getDescription())
+        return DataProvider.builder()
+                .providerId(request.getProviderId().toLowerCase())
+                .name(request.getName())
+                .description(request.getDescription())
                 .organization(organizationEntities)
                 .build();
     }
 
     @Override
-    public DataProviderDto entityToDto(final DataProviderEntity entity) {
+    public DataProviderDto entityToDto(final DataProvider entity) {
         if (isNull(entity.getOrganization())) {
             return DataProviderDto.builder()
                     .providerId(entity.getProviderId())
@@ -67,16 +65,15 @@ public class MapperImpl implements Mapper {
     }
 
     @Override
-    public DataProviderEntity updateDtoToEntity(final DataProviderEntity dto) {
-
-        return DataProviderEntity.builder()
+    public DataProvider updateDtoToEntity(final DataProvider dto) {
+        return DataProvider.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
                 .organization(dto.getOrganization())
                 .build();
     }
 
-    private OrganizationEntity dtoToEntity(final OrganizationDto dto) {
+    private OrganizationEntity requestToEntity(final RequestOrganization dto) {
         return OrganizationEntity.builder()
                 .organizationId(dto.getOrganizationId())
                 .name(dto.getName())
@@ -98,9 +95,9 @@ public class MapperImpl implements Mapper {
 
     //OFFERING
     @Override
-    public DataOffering dtoToEntity(final RequestNewDataOffering request) {
+    public DataOffering requestToEntity(final RequestNewDataOffering request) {
         return DataOffering.builder()
-                .provider(request.getProvider())
+                .provider(request.getProvider().toLowerCase())
                 .marketId(request.getMarketId())
                 .owner(request.getOwner())
                 .dataOfferingTitle(request.getDataOfferingTitle())
@@ -221,6 +218,7 @@ public class MapperImpl implements Mapper {
                 .spatial(request.getSpatial())
                 .accrualPeriodicity(request.getAccrualPeriodicity())
                 .temporal(request.getTemporal())
+                .theme(request.getTheme())
                 .distribution(distributionList)
                 .datasetInformation(datsetInforlationList)
                 .build();
@@ -266,7 +264,7 @@ public class MapperImpl implements Mapper {
     public DataOfferingDto entityToDto(final DataOffering entity) {
         return DataOfferingDto.builder()
                 .context(OfferingGeneralContext.builder().build())
-                .id(entity.getId())
+                .offeringId(entity.getId())
                 .provider(entity.getProvider())
                 .marketId(entity.getMarketId())
                 .owner(entity.getOwner())
@@ -274,8 +272,8 @@ public class MapperImpl implements Mapper {
                 .dataOfferingDescription(entity.getDataOfferingDescription())
                 .category(entity.getCategory())
                 .status(entity.getStatus())
-                .dataOfferingExpirationTime(entity.getDataOfferingExpirationTime())
                 .version(entity.getVersion())
+                .dataOfferingExpirationTime(entity.getDataOfferingExpirationTime())
                 .contractParameters(entityToDto(entity.getContractParameters()))
                 .hasPricingModel(entityToDto(entity.getHasPricingModel()))
                 .hasDataset(entityToDto(entity.getHasDataset()))
@@ -392,6 +390,7 @@ public class MapperImpl implements Mapper {
                 .spatial(entity.getSpatial())
                 .accrualPeriodicity(entity.getAccrualPeriodicity())
                 .temporal(entity.getTemporal())
+                .theme(entity.getTheme())
                 .distribution(distributionList)
                 .datasetInformation(datasetInformation)
                 .build();
@@ -429,6 +428,189 @@ public class MapperImpl implements Mapper {
                 .deviceId(entity.getDeviceId())
                 .cppType(entity.getCppType())
                 .sensorType(entity.getSensorType())
+                .build();
+    }
+
+
+    ///////////////////////////
+
+    @Override
+    public DataOffering dtoToEntity(final DataOfferingDto dto) {
+        return DataOffering.builder()
+                .owner(dto.getOwner())
+                .dataOfferingTitle(dto.getDataOfferingTitle())
+                .dataOfferingDescription(dto.getDataOfferingDescription())
+                .category(dto.getCategory())
+                .status(dto.getStatus())
+//                .version(dto.getVersion())
+                .dataOfferingExpirationTime(dto.getDataOfferingExpirationTime())
+                .contractParameters(requestToEntity(dto.getContractParameters()))
+                .hasPricingModel(requestToEntity(dto.getHasPricingModel()))
+                .hasDataset(requestToEntity(dto.getHasDataset()))
+                .build();
+    }
+
+    @Override
+    public ContractParametersResponse contractParameterDto(final DataOffering entity) {
+        return ContractParametersResponse.builder()
+                .offeringId(entity.getId())
+                .provider(entity.getProvider())
+                .category(entity.getCategory())
+                .contractParameters(entityToDto(entity.getContractParameters()))
+                .build();
+    }
+
+    @Override
+    public ProviderIdResponse providerIdDto(final DataOffering entity) {
+        return ProviderIdResponse.builder()
+                .provider(entity.getProvider()).build();
+    }
+
+    private ContractParameters requestToEntity(final ContractParametersDto dto) {
+        return ContractParameters.builder()
+                .interestOfProvider(dto.getInterestOfProvider())
+                .interestDescription(dto.getInterestDescription())
+                .hasGoverningJurisdiction(dto.getHasGoverningJurisdiction())
+                .purpose(dto.getPurpose())
+                .purposeDescription(dto.getPurposeDescription())
+                .hasIntendedUse(requestToEntity(dto.getHasIntendedUse()))
+                .hasLicenseGrant(requestToEntity(dto.getHasLicenseGrant()))
+                .build();
+    }
+
+    private IntendedUse requestToEntity(final IntendedUseDto dto) {
+        return IntendedUse.builder()
+                .processData(dto.isProcessData())
+                .editData(dto.isEditData())
+                .shareDataWithThirdParty(dto.isShareDataWithThirdParty())
+                .build();
+    }
+
+    private LicenseGrant requestToEntity(final LicenseGrantDto dto) {
+        return LicenseGrant.builder()
+                .copyData(dto.isCopyData())
+                .transferable(dto.isTransferable())
+                .exclusiveness(dto.isExclusiveness())
+                .revocable(dto.isRevocable())
+                .build();
+    }
+
+    private PricingModel requestToEntity(final PricingModelDto dto) {
+        return PricingModel.builder()
+                .pricingModelName(dto.getPricingModelName())
+                .basicPrice(dto.getBasicPrice())
+                .currency(dto.getCurrency())
+                .hasPaymentOnSubscription(requestToEntity(dto.getHasPaymentOnSubscription()))
+                .hasPaymentOnApi(requestToEntity(dto.getHasPaymentOnApi()))
+                .hasPaymentOnUnit(requestToEntity(dto.getHasPaymentOnUnit()))
+                .hasPaymentOnSize(requestToEntity(dto.getHasPaymentOnSize()))
+                .hasFreePrice(requestToEntity(dto.getHasFreePrice()))
+                .build();
+    }
+
+    private PaymentOnSubscription requestToEntity(final PaymentOnSubscriptionDto dto) {
+        return PaymentOnSubscription.builder()
+                .paymentOnSubscriptionName(dto.getPaymentOnSubscriptionName())
+                .paymentType(dto.getPaymentType())
+                .timeDuration(dto.getTimeDuration())
+                .description(dto.getDescription())
+                .repeat(dto.getRepeat())
+                .hasSubscriptionPrice(dto.getHasSubscriptionPrice())
+                .build();
+    }
+
+    private PaymentOnApi requestToEntity(final PaymentOnApiDto dto) {
+        return PaymentOnApi.builder()
+                .paymentOnApiName(dto.getPaymentOnApiName())
+                .description(dto.getDescription())
+                .numberOfObject(dto.getNumberOfObject())
+                .hasApiPrice(dto.getHasApiPrice())
+                .build();
+    }
+
+    private PaymentOnUnit requestToEntity(final PaymentOnUnitDto dto) {
+        return PaymentOnUnit.builder()
+                .paymentOnUnitName(dto.getPaymentOnUnitName())
+                .description(dto.getDescription())
+                .dataUnit(dto.getDataUnit())
+                .hasUnitPrice(dto.getHasUnitPrice())
+                .build();
+    }
+
+    private PaymentOnSize requestToEntity(final PaymentOnSizeDto dto) {
+        return PaymentOnSize.builder()
+                .paymentOnSizeName(dto.getPaymentOnSizeName())
+                .description(dto.getDescription())
+                .dataSize(dto.getDataSize())
+                .hasSizePrice(dto.getHasSizePrice())
+                .build();
+    }
+
+    private FreePrice requestToEntity(final FreePriceDto dto) {
+        return FreePrice.builder()
+                .hasPriceFree(dto.isHasPriceFree())
+                .build();
+    }
+
+    private Dataset requestToEntity(final DatasetDto dto) {
+        final var distributionList = dto.getDistribution()
+                .parallelStream().map(this::requestToEntity)
+                .collect(Collectors.toList());
+
+        final var datsetInforlationList = dto.getDatasetInformation()
+                .parallelStream().map(this::requestToEntity)
+                .collect(Collectors.toList());
+
+        return Dataset.builder()
+                .title(dto.getTitle())
+                .keyword(dto.getKeyword())
+                .dataset(dto.getDataset())
+                .description(dto.getDescription())
+                .issued(dto.getIssued())
+                .modified(dto.getModified())
+                .temporal(dto.getTemporal())
+                .language(dto.getLanguage())
+                .spatial(dto.getSpatial())
+                .accrualPeriodicity(dto.getAccrualPeriodicity())
+                .temporal(dto.getTemporal())
+                .theme(dto.getTheme())
+                .distribution(distributionList)
+                .datasetInformation(datsetInforlationList)
+                .build();
+    }
+
+    private Distribution requestToEntity(final DistributionDto dto) {
+        return Distribution.builder()
+                .title(dto.getTitle())
+                .description(dto.getDescription())
+                .license(dto.getLicense())
+                .accessRights(dto.getAccessRights())
+                .downloadType(dto.getDownloadType())
+                .conformsTo(dto.getConformsTo())
+                .mediaType(dto.getMediaType())
+                .packageFormat(dto.getPackageFormat())
+                .accessService(requestToEntity(dto.getAccessService()))
+                .build();
+    }
+
+    private AccessService requestToEntity(final AccessServiceDto dto) {
+        return AccessService.builder()
+                .conformsTo(dto.getConformsTo())
+                .endpointDescription(dto.getEndpointDescription())
+                .endpointURL(dto.getEndpointURL())
+                .servesDataset(dto.getServesDataset())
+                .serviceSpecs(dto.getServiceSpecs())
+                .build();
+    }
+
+    private DatasetInformation requestToEntity(final DatasetInformationDto dto) {
+        return DatasetInformation.builder()
+                .measurementType(dto.getMeasurementType())
+                .measurementChannelType(dto.getMeasurementChannelType())
+                .sensorId(dto.getSensorId())
+                .deviceId(dto.getDeviceId())
+                .cppType(dto.getCppType())
+                .sensorType(dto.getSensorType())
                 .build();
     }
 }

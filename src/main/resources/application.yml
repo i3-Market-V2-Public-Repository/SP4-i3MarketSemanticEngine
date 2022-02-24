@@ -1,9 +1,11 @@
 server:
-  port: 8082
+  port: 8083
   error.include-message: always
 
 springdoc:
-  swagger-ui.path: /swagger-ui.html
+  swagger-ui:
+    path: /swagger-ui.html
+    default-models-expand-depth: -1
   api-docs.path: /openapi/v3/api-docs
   pathsToMatch: /**
   packagesToScan: com.i3market
@@ -24,20 +26,26 @@ api:
     contact:
       name: Chi H Le
       url:
-      email: chi-hung.le@insight-centre.org
+      email: lchhung@gmail.com
 ---
 spring:
   application:
     name: SEMANTIC-ENGINE-SERVICE
 ---
 spring.data.mongodb:
-  host: localhost
-  port: 27017
+  host: mongodb
+  port: 27018
+  authentication-database: admin
+  username: root
+  password: fe687564-2c56-4e4b-962f-1c2b3367aa9c-4596034d-a2a9-4399-aaf8-34b0c612e5e4
+  #  host: 95.211.3.251
+  #  host: localhost
+  #  port: 27018
   database: semantic-engine-database
   auto-index-creation: true
 ---
 category-list:
-  url: http://95.211.3.244:7500/data_categoriesdocker-compose.yml
+  url: http://95.211.3.244:7500/data_categories
 
 ---
 spring.config.activate.on-profile: docker

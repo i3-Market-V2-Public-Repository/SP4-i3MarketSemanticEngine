@@ -36,6 +36,8 @@ public class Dataset implements Serializable {
 
     String temporalResolution;
 
+    List<String> theme = new ArrayList<>();
+
     List<Distribution> distribution = new ArrayList<>();
 
     List<DatasetInformation> datasetInformation = new ArrayList<>();

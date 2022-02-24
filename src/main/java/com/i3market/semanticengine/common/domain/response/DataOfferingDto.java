@@ -1,5 +1,6 @@
 package com.i3market.semanticengine.common.domain.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
@@ -13,14 +14,16 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 @Value
 @Builder(builderClassName = "Builder", toBuilder = true)
 @JsonDeserialize(builder = DataOfferingDto.Builder.class)
+@ToString(onlyExplicitlyIncluded = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DataOfferingDto {
 
     OfferingGeneralContext context;
 
-    String id;
+    String offeringId;
 
     @lombok.Builder.Default
+    @JsonIgnore
     String type = "http://i3-market.eu/backplane/core/DataOffering";
 
     String provider;
@@ -45,7 +48,7 @@ public class DataOfferingDto {
     String dataOfferingExpirationTime;
 
     @ToString.Include
-    int version;
+    Long version;
 
     @ToString.Include
     String createdAt;
@@ -61,5 +64,8 @@ public class DataOfferingDto {
 
     @JsonPOJOBuilder(withPrefix = EMPTY)
     public static class Builder {
+
     }
+
+
 }

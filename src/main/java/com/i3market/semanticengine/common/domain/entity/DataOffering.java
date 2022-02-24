@@ -41,7 +41,7 @@ public class DataOffering implements Serializable {
 
     @ToString.Include
     @Version
-    int version;
+    Long version;
 
     @ToString.Include
     @CreatedDate

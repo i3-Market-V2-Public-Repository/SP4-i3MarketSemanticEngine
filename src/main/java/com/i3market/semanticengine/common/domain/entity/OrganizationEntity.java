@@ -1,4 +1,4 @@
-package com.i3market.semanticengine.common.domain;
+package com.i3market.semanticengine.common.domain.entity;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;

@@ -1,6 +1,8 @@
 package com.i3market.semanticengine.controller.impl;
 
-import com.i3market.semanticengine.common.domain.DataProviderDto;
+import com.i3market.semanticengine.common.domain.request.RequestDataProvider;
+import com.i3market.semanticengine.common.domain.response.DataProviderDto;
+import com.i3market.semanticengine.common.domain.response.ProviderIdResponse;
 import com.i3market.semanticengine.controller.ProviderController;
 import com.i3market.semanticengine.service.DataProviderService;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +21,7 @@ public class ProviderControllerImpl implements ProviderController {
 
 
     @Override
-    public ResponseEntity<Mono<DataProviderDto>> createDataProvider(final DataProviderDto dto) {
+    public ResponseEntity<Mono<DataProviderDto>> createDataProvider(final RequestDataProvider dto) {
         log.info("Start creating data provider");
         final Mono<DataProviderDto> provider = dataProviderService.createDataProvider(dto);
         log.info("Start creating data provider, success");
@@ -27,7 +29,7 @@ public class ProviderControllerImpl implements ProviderController {
     }
 
     @Override
-    public ResponseEntity<Mono<DataProviderDto>> updatedDataProvider(final DataProviderDto dataProviderDto) {
+    public ResponseEntity<Mono<DataProviderDto>> updatedDataProvider(final RequestDataProvider dataProviderDto) {
         log.info("Start updating data provider");
         final Mono<DataProviderDto> updatedProvider = dataProviderService.updatedDataProvider(dataProviderDto);
         log.info("Start updating data provider, success");
@@ -50,8 +52,8 @@ public class ProviderControllerImpl implements ProviderController {
     }
 
     @Override
-    public ResponseEntity<Flux<DataProviderDto>> providerList(final int page, final int size) {
+    public ResponseEntity<Flux<ProviderIdResponse>> providerList(final int page, final int size) {
         return ResponseEntity.ok(dataProviderService.providerList(page, size));
     }
-    
+
 }
