@@ -72,7 +72,9 @@ public interface DataOfferingController {
                                                                        @RequestParam(value = "size", defaultValue = "5") final int size);
 
     @GetMapping("/offerings")
-    @Operation(summary = "GET a total of offering and offering list")
+    @Operation(
+            summary = "GET a total of offering and offering list",
+            description = "${api.i3market-semantic-engine.get-total-offering.notes}")
     @SneakyThrows
     ResponseEntity<Mono<TotalOfferingResponse>> getOfferingByProviderIdAndCategorySorted(@RequestParam(value = "providerId", defaultValue = "All") String providerId,
                                                                                          @RequestParam(value = "category", defaultValue = "All") String category,

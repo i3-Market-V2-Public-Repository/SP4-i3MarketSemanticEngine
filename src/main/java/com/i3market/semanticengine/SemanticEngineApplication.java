@@ -23,8 +23,19 @@ public class SemanticEngineApplication {
 
     public static void main(final String[] args) {
         final SpringApplication app = new SpringApplication(SemanticEngineApplication.class);
+        setProfile(app);
         final Environment env = app.run(args).getEnvironment();
         logApplicationStartup(env);
+    }
+
+    final static void setProfile(final SpringApplication app) {
+        final String envVar = "SEMANTIC-ENGINE";
+        final String value = System.getenv().getOrDefault(envVar, "local");
+        if (value.contains("test-env")) {
+            app.setAdditionalProfiles("test-env");
+        } else {
+            app.setAdditionalProfiles(value);
+        }
     }
 
     private static void logApplicationStartup(final Environment env) {
