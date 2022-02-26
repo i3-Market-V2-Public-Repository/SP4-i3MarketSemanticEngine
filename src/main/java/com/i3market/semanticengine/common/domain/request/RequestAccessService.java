@@ -23,12 +23,16 @@ public class RequestAccessService {
     @NotBlank(message = "purposeDescription is required")
     @NotEmpty(message = "purposeDescription is required")
     @Schema(example = "required", required = true, type = "String")
-    String endpointDescription;
+    @lombok.Builder.Default
+    String endpointDescription = "require";
 
     @Schema(example = "https://example.com/download/testdata.json", required = true, type = "String")
-    String endpointURL;
+    @lombok.Builder.Default
+    String endpointURL = "require";
 
-    String servesDataset;
+    @lombok.Builder.Default
+    String servesDataset = "require";
 
-    String serviceSpecs;
+    @lombok.Builder.Default
+    String serviceSpecs = "require";
 }

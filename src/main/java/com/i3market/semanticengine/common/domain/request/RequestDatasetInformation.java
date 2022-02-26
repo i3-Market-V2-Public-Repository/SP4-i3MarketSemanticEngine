@@ -1,6 +1,7 @@
 package com.i3market.semanticengine.common.domain.request;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 @Data
@@ -12,15 +13,23 @@ import lombok.*;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RequestDatasetInformation {
 
-    String measurementType;
+    @Schema(example = "required", required = true, type = "String")
+    @lombok.Builder.Default
+    String measurementType = "require";
 
-    String measurementChannelType;
+    @Schema(example = "required", required = true, type = "String")
+    @lombok.Builder.Default
+    String measurementChannelType = "require";
 
-    String sensorId;
+    @Schema(example = "required", required = true, type = "String")
+    @lombok.Builder.Default
+    String sensorId = "require";
 
-    String deviceId;
+    @Schema(example = "required", required = true, type = "String")
+    @lombok.Builder.Default
+    String deviceId = "require";
 
-    String cppType;
+    String cppType = "require";
 
-    String sensorType;
+    String sensorType = "require";
 }

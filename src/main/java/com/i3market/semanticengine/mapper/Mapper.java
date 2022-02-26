@@ -25,7 +25,7 @@ public interface Mapper {
 
     ContractParametersResponse contractParameterDto(final DataOffering entity);
 
-    ProviderIdResponse providerIdDto(final DataOffering entity);
+    ProviderIdResponse providerIdDto(final DataOfferingDto entity);
 
 
 }

@@ -461,7 +461,7 @@ public class MapperImpl implements Mapper {
     }
 
     @Override
-    public ProviderIdResponse providerIdDto(final DataOffering entity) {
+    public ProviderIdResponse providerIdDto(final DataOfferingDto entity) {
         return ProviderIdResponse.builder()
                 .provider(entity.getProvider()).build();
     }

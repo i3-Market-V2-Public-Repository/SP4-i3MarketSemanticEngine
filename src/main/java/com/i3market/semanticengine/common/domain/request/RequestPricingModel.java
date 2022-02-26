@@ -1,6 +1,5 @@
 package com.i3market.semanticengine.common.domain.request;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -15,14 +14,14 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class RequestPricingModel {
 
     @NotNull(message = "pricingModelName is required")
     @NotBlank(message = "pricingModelName is required")
     @NotEmpty(message = "pricingModelName is required")
     @Schema(example = "required", required = true, type = "String")
-    String pricingModelName;
+    @lombok.Builder.Default
+    String pricingModelName = "require";
 
     @NotNull(message = "basicPrice is required")
     @NotBlank(message = "basicPrice is required")
@@ -33,7 +32,8 @@ public class RequestPricingModel {
     @NotBlank(message = "currency is required")
     @NotEmpty(message = "currency is required")
     @Schema(example = "EUR", required = true, type = "String")
-    String currency;
+    @lombok.Builder.Default
+    String currency = "require";
 
     RequestPaymentOnSubscription hasPaymentOnSubscription = RequestPaymentOnSubscription.builder().build();
 

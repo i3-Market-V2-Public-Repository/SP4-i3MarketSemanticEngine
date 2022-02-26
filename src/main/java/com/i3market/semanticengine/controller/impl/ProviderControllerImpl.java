@@ -38,21 +38,25 @@ public class ProviderControllerImpl implements ProviderController {
 
     @Override
     public ResponseEntity<Mono<DataProviderDto>> getDataProviderByProviderId(final String providerId) {
+        log.info("GET data provider by providerId");
         return ResponseEntity.ok(dataProviderService.getDataProviderByProviderId(providerId));
     }
 
     @Override
     public ResponseEntity<Mono<Void>> deleteAllProvider() {
+        log.info("DELETE all providers");
         return ResponseEntity.ok(dataProviderService.deleteAllProvider());
     }
 
     @Override
     public ResponseEntity<Mono<Void>> deleteProviderByProviderId(final String providerId) {
+        log.info("DELETE provider by providerId");
         return ResponseEntity.ok(dataProviderService.deleteProviderByProviderId(providerId));
     }
 
     @Override
     public ResponseEntity<Flux<ProviderIdResponse>> providerList(final int page, final int size) {
+        log.info("GET provider list");
         return ResponseEntity.ok(dataProviderService.providerList(page, size));
     }
 

@@ -12,7 +12,7 @@ public interface DataOfferingService {
 
     Flux<CategoriesList> getCategoryList();
 
-    Mono<DataOfferingDto> createDataOffering(final RequestNewDataOffering dto);
+    Mono<DataOfferingDto> createDataOffering(final RequestNewDataOffering dto) throws ExecutionException, InterruptedException;
 
     Mono<Void> deleteAllOffering();
 
@@ -34,4 +34,6 @@ public interface DataOfferingService {
                                                                          final int size, final String orderBy, final String sortBy) throws ExecutionException, InterruptedException;
 
     Mono<Void> deleteDataOfferingById(final String offeringId);
+
+    String getOfferingTemplate();
 }

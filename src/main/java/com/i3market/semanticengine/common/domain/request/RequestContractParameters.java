@@ -19,31 +19,36 @@ public class RequestContractParameters {
     @NotBlank(message = "interestOfProvider is required")
     @NotEmpty(message = "interestOfProvider is required")
     @Schema(example = "required", required = true, type = "String")
-    String interestOfProvider;
+    @lombok.Builder.Default
+    String interestOfProvider = "required";
 
     @NotNull(message = "interestDescription is required")
     @NotBlank(message = "interestDescription is required")
     @NotEmpty(message = "interestDescription is required")
     @Schema(example = "required", required = true, type = "String")
-    String interestDescription;
+    @lombok.Builder.Default
+    String interestDescription = "required";
 
     @NotNull(message = "hasGoverningJurisdiction is required")
     @NotBlank(message = "hasGoverningJurisdiction is required")
     @NotEmpty(message = "hasGoverningJurisdiction is required")
     @Schema(example = "required", required = true, type = "String")
-    String hasGoverningJurisdiction;
+    @lombok.Builder.Default
+    String hasGoverningJurisdiction = "required";
 
     @NotNull(message = "purpose is required")
     @NotBlank(message = "purpose is required")
     @NotEmpty(message = "purpose is required")
     @Schema(example = "required", required = true, type = "String")
-    String purpose;
+    @lombok.Builder.Default
+    String purpose = "required";
 
     @NotNull(message = "purposeDescription is required")
     @NotBlank(message = "purposeDescription is required")
     @NotEmpty(message = "purposeDescription is required")
     @Schema(example = "required", required = true, type = "String")
-    String purposeDescription;
+    @lombok.Builder.Default
+    String purposeDescription = "required";
 
     RequestIntendedUse hasIntendedUse;
 

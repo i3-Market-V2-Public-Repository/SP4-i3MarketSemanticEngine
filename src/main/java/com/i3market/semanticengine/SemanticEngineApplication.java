@@ -6,7 +6,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
-import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.net.InetAddress;
@@ -19,7 +18,6 @@ import java.net.UnknownHostException;
  */
 
 @Log4j2
-@EnableMongoAuditing
 @SpringBootApplication
 public class SemanticEngineApplication {
 

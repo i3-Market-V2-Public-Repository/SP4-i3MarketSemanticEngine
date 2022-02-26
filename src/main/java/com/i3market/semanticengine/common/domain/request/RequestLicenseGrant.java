@@ -20,7 +20,7 @@ public class RequestLicenseGrant {
     @NotBlank(message = "copyData is required")
     @NotEmpty(message = "copyData is required")
     @Schema(example = "false", required = true, type = "boolean")
-    boolean copyData = true;
+    boolean copyData;
 
     @ToString.Include
     @NotNull(message = "transferable is required")

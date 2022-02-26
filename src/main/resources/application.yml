@@ -27,18 +27,18 @@ api:
       name: Chi H Le
       url:
       email: lchhung@gmail.com
----
+
 spring:
   application:
     name: SEMANTIC-ENGINE-SERVICE
----
+
 spring.data.mongodb:
-  host: mongodb
+  #  host: mongodb
   port: 27018
   authentication-database: admin
   username: root
   password: fe687564-2c56-4e4b-962f-1c2b3367aa9c-4596034d-a2a9-4399-aaf8-34b0c612e5e4
-  #  host: 95.211.3.251
+  host: 95.211.3.251
   #  host: localhost
   #  port: 27018
   database: semantic-engine-database
