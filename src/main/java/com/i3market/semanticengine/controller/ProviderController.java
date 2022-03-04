@@ -27,18 +27,18 @@ public interface ProviderController {
     @Operation(summary = "UPDATE an existing provider")
     ResponseEntity<Mono<DataProviderDto>> updatedDataProvider(@Valid @NotNull @RequestBody final RequestDataProvider dataProviderDto);
 
-    @GetMapping("/offerings/provider/{providerId}")
+    @GetMapping("/offering/provider/{providerId}")
     @Operation(summary = "GET a provider by providerId")
     ResponseEntity<Mono<DataProviderDto>> getDataProviderByProviderId(@PathVariable(name = "providerId") final String providerId);
 
     //    @DeleteMapping("/provider")
     ResponseEntity<Mono<Void>> deleteAllProvider();
 
-    @DeleteMapping("/provider/{providerId}")
+    @DeleteMapping("/provider/{providerId}/delete")
     @Operation(summary = "DELETE a provider by providerId")
     ResponseEntity<Mono<Void>> deleteProviderByProviderId(@PathVariable(name = "providerId") final String providerId);
 
-    @GetMapping("/provider-list")
+    @GetMapping("/providers-list")
     @Operation(summary = "GET a list of providers")
     ResponseEntity<Flux<ProviderIdResponse>> providerList(@RequestParam(value = "page", defaultValue = "0") int page,
                                                           @RequestParam(value = "size", defaultValue = "5") int size);

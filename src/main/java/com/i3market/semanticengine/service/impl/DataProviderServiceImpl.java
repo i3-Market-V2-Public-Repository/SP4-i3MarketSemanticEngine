@@ -4,12 +4,15 @@ import com.i3market.semanticengine.common.domain.entity.DataProvider;
 import com.i3market.semanticengine.common.domain.request.RequestDataProvider;
 import com.i3market.semanticengine.common.domain.response.DataProviderDto;
 import com.i3market.semanticengine.common.domain.response.ProviderIdResponse;
+import com.i3market.semanticengine.exception.ConflictException;
 import com.i3market.semanticengine.exception.InvalidInputException;
 import com.i3market.semanticengine.exception.NotFoundException;
 import com.i3market.semanticengine.mapper.Mapper;
+import com.i3market.semanticengine.repository.DataOfferingRepository;
 import com.i3market.semanticengine.repository.DataProviderRepository;
 import com.i3market.semanticengine.service.DataProviderService;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
@@ -18,7 +21,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Instant;
 import java.util.logging.Level;
 
 import static java.util.Objects.isNull;
@@ -29,6 +32,8 @@ import static java.util.Objects.isNull;
 public class DataProviderServiceImpl implements DataProviderService {
 
     private final DataProviderRepository providerRepository;
+
+    private final DataOfferingRepository dataOfferingRepository;
 
     private final Mapper mapper;
 
@@ -42,7 +47,7 @@ public class DataProviderServiceImpl implements DataProviderService {
             throw new InvalidInputException(HttpStatus.BAD_REQUEST, "ProviderId and Provider name must be provided");
         }
         final DataProvider entity = mapper.requestToEntity(dto);
-        entity.setCreatedAt(simpleFormat.format(new Date()));
+        entity.setCreatedAt(Instant.now());
         final Mono<DataProvider> newEntity = providerRepository.save(entity);
 
         return newEntity.log(log.getName(), Level.FINE)
@@ -55,7 +60,6 @@ public class DataProviderServiceImpl implements DataProviderService {
     @Override
     public Mono<DataProviderDto> getDataProviderByProviderId(final String providerId) {
         final Mono<DataProvider> getProvider = providerRepository.findByProviderId(providerId.toLowerCase());
-
         return getProvider
                 .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Data providerId " + providerId + " does not exist")))
                 .log(log.getName(), Level.FINE)
@@ -68,7 +72,12 @@ public class DataProviderServiceImpl implements DataProviderService {
     }
 
     @Override
+    @SneakyThrows
     public Mono<Void> deleteProviderByProviderId(final String providerId) {
+        final var getOfferings = dataOfferingRepository.findByProvider(providerId).take(1L).collectList().toFuture().get().size();
+        if (getOfferings > 0) {
+            throw new ConflictException(HttpStatus.CONFLICT, "We are sorry. You can not delete this provider as there are offerings associated with this providerId: " + providerId);
+        }
         return providerRepository.findByProviderId(providerId.toLowerCase())
                 .log(log.getName(), Level.FINE)
                 .map(e -> providerRepository.delete(e))
@@ -83,7 +92,7 @@ public class DataProviderServiceImpl implements DataProviderService {
         return currentEntity
                 .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Data providerId " + providerId + " does not exist")))
                 .log(log.getName(), Level.FINE)
-                .map(e -> providerTransform(updateEntity, e))
+                .map(e -> providerTransform(updateEntity, e).toBuilder().updatedAt(Instant.now()).build())
                 .flatMap(providerRepository::save)
                 .map(e -> mapper.entityToDto(e));
     }
@@ -101,7 +110,6 @@ public class DataProviderServiceImpl implements DataProviderService {
                 .name(updateEntity.getName())
                 .organization(updateEntity.getOrganization())
                 .description(updateEntity.getDescription())
-                .updatedAt(simpleFormat.format(new Date()))
                 .build();
     }
 }

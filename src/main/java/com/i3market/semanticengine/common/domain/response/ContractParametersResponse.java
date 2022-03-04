@@ -12,8 +12,7 @@ import lombok.Value;
 @ToString(onlyExplicitlyIncluded = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ContractParametersResponse {
-
-
+    
     String offeringId;
 
     String provider;

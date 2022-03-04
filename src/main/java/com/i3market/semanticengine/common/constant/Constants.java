@@ -5,5 +5,4 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class Constants {
     public static final String SEMANTIC_ENGINE_MAIN_PATH = "/api/registration";
-    public static final String HELLO_PATH = "hello";
 }

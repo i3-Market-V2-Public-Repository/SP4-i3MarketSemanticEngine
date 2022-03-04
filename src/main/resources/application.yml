@@ -1,5 +1,5 @@
 server:
-  port: 8083
+  port: 8082
   error.include-message: always
 
 springdoc:
@@ -115,10 +115,10 @@ spring.data.mongodb:
   database: semantic-engine-database
   auto-index-creation: true
 
-
 ---
 category-list:
   url: http://95.211.3.244:7500/data_categories
+
 ---
-spring.config.activate.on-profile: local, test-env
+spring.config.activate.on-profile: test-env
 spring.data.mongodb.host: mongodb

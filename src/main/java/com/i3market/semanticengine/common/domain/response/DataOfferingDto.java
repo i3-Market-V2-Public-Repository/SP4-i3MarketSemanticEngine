@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.ToString;
 import lombok.Value;
 
+import java.time.Instant;
+
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 @Value
@@ -20,7 +22,7 @@ public class DataOfferingDto {
 
     OfferingGeneralContext context;
 
-    String offeringId;
+    String dataOfferingId;
 
     @lombok.Builder.Default
     @JsonIgnore
@@ -51,10 +53,10 @@ public class DataOfferingDto {
     Long version;
 
     @ToString.Include
-    String createdAt;
+    Instant createdAt;
 
     @ToString.Include
-    String updatedAt;
+    Instant updatedAt;
 
     ContractParametersDto contractParameters;
 

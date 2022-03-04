@@ -1,7 +1,7 @@
 package com.i3market.semanticengine.controller;
 
 import com.i3market.semanticengine.common.domain.CategoriesList;
-import com.i3market.semanticengine.common.domain.request.RequestNewDataOffering;
+import com.i3market.semanticengine.common.domain.request.RequestDataOffering;
 import com.i3market.semanticengine.common.domain.response.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,7 +30,7 @@ public interface DataOfferingController {
 
     @PostMapping("/data-offering")
     @Operation(summary = "POST register a new offering")
-    ResponseEntity<Mono<DataOfferingDto>> createDataOffering(@Valid @NotNull @RequestBody final RequestNewDataOffering request) throws ExecutionException, InterruptedException;
+    ResponseEntity<Mono<DataOfferingDto>> createDataOffering(@Valid @NotNull @RequestBody final RequestDataOffering request) throws ExecutionException, InterruptedException;
 
     @PutMapping("/update-offering")
     @Operation(summary = "UPDATE an existing offering")
@@ -80,14 +80,14 @@ public interface DataOfferingController {
                                                                                          @RequestParam(value = "category", defaultValue = "All") String category,
                                                                                          @RequestParam(value = "page", defaultValue = "0") int page,
                                                                                          @RequestParam(value = "size", defaultValue = "5") int size,
-                                                                                         @RequestParam(value = "sortBy", defaultValue = "time") String sortBy,
-                                                                                         @RequestParam(value = "orderIn", defaultValue = "desc") String orderIn
+                                                                                         @RequestParam(value = "orderBy", defaultValue = "time") String orderBy,
+                                                                                         @RequestParam(value = "sortBy", defaultValue = "desc") String sortBy
     );
 
 
-    @DeleteMapping("/delete-offering/{offeringId}")
+    @DeleteMapping("/delete-offering/{id}")
     @Operation(summary = "DELETE an offering by offeringId")
-    ResponseEntity<Mono<Void>> deleteDataOfferingById(@PathVariable(name = "offeringId") final String offeringId);
+    ResponseEntity<Mono<Void>> deleteDataOfferingById(@PathVariable(name = "id") final String offeringId);
 
     @GetMapping(value = "/offering/offering-template")
     @Operation(summary = "Download offering template")

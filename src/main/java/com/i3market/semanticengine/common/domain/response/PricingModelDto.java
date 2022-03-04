@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import lombok.Builder;
+import lombok.ToString;
 import lombok.Value;
 
 import java.math.BigDecimal;
@@ -15,6 +16,7 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 @Builder(builderClassName = "Builder", toBuilder = true)
 @JsonDeserialize(builder = PricingModelDto.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@ToString(onlyExplicitlyIncluded = true)
 public class PricingModelDto {
 
     @lombok.Builder.Default

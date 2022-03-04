@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
+import java.time.Instant;
 
 @Data
 @Builder(toBuilder = true)
@@ -45,11 +46,11 @@ public class DataOffering implements Serializable {
 
     @ToString.Include
     @CreatedDate
-    String createdAt;
+    Instant createdAt;
 
     @ToString.Include
     @LastModifiedDate
-    String updatedAt;
+    Instant updatedAt;
 
     @ToString.Include
     String dataOfferingExpirationTime;

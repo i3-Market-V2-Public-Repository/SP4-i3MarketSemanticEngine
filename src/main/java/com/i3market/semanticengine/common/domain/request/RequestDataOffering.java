@@ -16,9 +16,9 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 @Value
 @Builder(builderClassName = "Builder", toBuilder = true)
-@JsonDeserialize(builder = RequestNewDataOffering.Builder.class)
+@JsonDeserialize(builder = RequestDataOffering.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class RequestNewDataOffering {
+public class RequestDataOffering {
 
     @NotNull(message = "provider is required")
     @NotBlank(message = "provider is required")

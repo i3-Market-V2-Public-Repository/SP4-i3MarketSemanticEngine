@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Value;
 
 @Value
-@Builder(builderClassName = "Builder", toBuilder = true)
+@Builder(builderClassName = "Builder", toBuilder = false)
 @JsonDeserialize(builder = OfferingGeneralContext.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OfferingGeneralContext {

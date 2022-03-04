@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.ToString;
 import lombok.Value;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -32,9 +33,9 @@ public class DataProviderDto {
 
     List<OrganizationDto> organization;
 
-    String createdAt;
+    Instant createdAt;
 
-    String updatedAt;
+    Instant updatedAt;
 
     @JsonPOJOBuilder(withPrefix = EMPTY)
     public static class Builder {

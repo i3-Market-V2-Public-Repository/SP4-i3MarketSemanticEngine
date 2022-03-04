@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,9 +35,9 @@ public class DataProvider implements Serializable {
     @Builder.Default
     String description = null;
 
-    String createdAt;
+    Instant createdAt;
 
-    String updatedAt;
+    Instant updatedAt;
 
     List<OrganizationEntity> organization = new ArrayList<>();
 

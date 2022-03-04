@@ -1,7 +1,7 @@
 package com.i3market.semanticengine.controller.impl;
 
 import com.i3market.semanticengine.common.domain.CategoriesList;
-import com.i3market.semanticengine.common.domain.request.RequestNewDataOffering;
+import com.i3market.semanticengine.common.domain.request.RequestDataOffering;
 import com.i3market.semanticengine.common.domain.response.*;
 import com.i3market.semanticengine.controller.DataOfferingController;
 import com.i3market.semanticengine.service.DataOfferingService;
@@ -29,7 +29,7 @@ public class DataOfferingControllerImp implements DataOfferingController {
 
     @Override
     @SneakyThrows
-    public ResponseEntity<Mono<DataOfferingDto>> createDataOffering(final RequestNewDataOffering dto) {
+    public ResponseEntity<Mono<DataOfferingDto>> createDataOffering(final RequestDataOffering dto) {
         log.info("POST a new offering");
         return ResponseEntity.ok(dataOfferingService.createDataOffering(dto));
     }

@@ -22,9 +22,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -57,16 +57,16 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
     @Override
     @SneakyThrows
-    public Mono<DataOfferingDto> createDataOffering(final RequestNewDataOffering dto) {
+    public Mono<DataOfferingDto> createDataOffering(final RequestDataOffering dto) {
 
         final Mono<DataProviderDto> dataProvider = dataProviderRepository.findByProviderId(dto.getProvider())
                 .map(mapper::entityToDto);
         if (isNull(dataProvider.toFuture().get())) {
-            throw new InvalidInputException(HttpStatus.BAD_REQUEST, "We are sorry! The provider " + dto.getProvider() + " has not been registered");
+            throw new InvalidInputException(HttpStatus.BAD_REQUEST, "We are sorry! The provider `" + dto.getProvider() + "` has not been registered");
         }
 
         final var entity = mapper.requestToEntity(dto);
-        entity.setCreatedAt(simpleFormat.format(new Date()));
+        entity.setCreatedAt(Instant.now());
         final var newEntity = dataOfferingRepository.save(entity);
         return newEntity.log(log.getName(), Level.FINE)
                 .onErrorMap(RuntimeException.class,
@@ -95,16 +95,16 @@ public class DataOfferingServiceImpl implements DataOfferingService {
                 .skip(page * size).take(size)
                 .sort(compareOfferingTime.reversed())
                 .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "We are sorry! No data offering found.")))
-                .map(e -> OfferingIdResponse.builder().offering(e.getOfferingId()).build());
+                .map(e -> OfferingIdResponse.builder().offering(e.getDataOfferingId()).build());
     }
 
     @Override
     public Mono<DataOfferingDto> updateDataOffering(final DataOfferingDto body) {
-        final var currentEntity = dataOfferingRepository.findById(body.getOfferingId());
+        final var currentEntity = dataOfferingRepository.findById(body.getDataOfferingId());
         final var updateEntity = mapper.dtoToEntity(body);
         return currentEntity.log(log.getName(), Level.FINE)
-                .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Were are sorry! Data Offering id" + body.getOfferingId() + " does not exist")))
-                .map(e -> offeringTransform(updateEntity, e).toBuilder().updatedAt(simpleFormat.format(new Date())).build())
+                .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Were are sorry! Data Offering id" + body.getDataOfferingId() + " does not exist")))
+                .map(e -> offeringTransform(updateEntity, e).toBuilder().updatedAt(Instant.now()).build())
                 .flatMap(dataOfferingRepository::save)
                 .map(mapper::entityToDto);
     }
@@ -248,7 +248,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
                 .distribution(distribution)
                 .build();
         return new GsonBuilder().serializeNulls().setPrettyPrinting().create()
-                .toJson(RequestNewDataOffering.builder()
+                .toJson(RequestDataOffering.builder()
                         .contractParameters(contractParameters)
                         .hasPricingModel(pricingModel)
                         .hasDataset(dataset)

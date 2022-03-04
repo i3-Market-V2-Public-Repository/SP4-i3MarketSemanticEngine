@@ -95,7 +95,7 @@ public class MapperImpl implements Mapper {
 
     //OFFERING
     @Override
-    public DataOffering requestToEntity(final RequestNewDataOffering request) {
+    public DataOffering requestToEntity(final RequestDataOffering request) {
         return DataOffering.builder()
                 .provider(request.getProvider().toLowerCase())
                 .marketId(request.getMarketId())
@@ -264,7 +264,7 @@ public class MapperImpl implements Mapper {
     public DataOfferingDto entityToDto(final DataOffering entity) {
         return DataOfferingDto.builder()
                 .context(OfferingGeneralContext.builder().build())
-                .offeringId(entity.getId())
+                .dataOfferingId(entity.getId())
                 .provider(entity.getProvider())
                 .marketId(entity.getMarketId())
                 .owner(entity.getOwner())
