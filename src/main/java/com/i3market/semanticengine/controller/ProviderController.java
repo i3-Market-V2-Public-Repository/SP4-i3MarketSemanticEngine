@@ -31,9 +31,6 @@ public interface ProviderController {
     @Operation(summary = "GET a provider by providerId")
     ResponseEntity<Mono<DataProviderDto>> getDataProviderByProviderId(@PathVariable(name = "providerId") final String providerId);
 
-    //    @DeleteMapping("/provider")
-    ResponseEntity<Mono<Void>> deleteAllProvider();
-
     @DeleteMapping("/provider/{providerId}/delete")
     @Operation(summary = "DELETE a provider by providerId")
     ResponseEntity<Mono<Void>> deleteProviderByProviderId(@PathVariable(name = "providerId") final String providerId);

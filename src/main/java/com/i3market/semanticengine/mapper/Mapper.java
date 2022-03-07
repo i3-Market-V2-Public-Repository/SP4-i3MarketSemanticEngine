@@ -27,5 +27,4 @@ public interface Mapper {
 
     ProviderIdResponse providerIdDto(final DataOfferingDto entity);
 
-
 }

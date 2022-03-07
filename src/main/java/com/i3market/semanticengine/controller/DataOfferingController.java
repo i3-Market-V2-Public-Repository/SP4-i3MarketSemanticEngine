@@ -40,10 +40,6 @@ public interface DataOfferingController {
     @Operation(summary = "GET an offering by offeringId")
     ResponseEntity<Mono<DataOfferingDto>> getDataOfferingById(@PathVariable(name = "id") final String id);
 
-    //    @DeleteMapping("/data-offering/delete/all")
-    @Operation(summary = "DELETE all offerings")
-    ResponseEntity<Mono<Void>> deleteAllOffering();
-
     @GetMapping("/offerings-list")
     @Operation(summary = "GET a list of all offering")
     ResponseEntity<Flux<OfferingIdResponse>> getOfferingList(@RequestParam(value = "page", defaultValue = "0") final int page,

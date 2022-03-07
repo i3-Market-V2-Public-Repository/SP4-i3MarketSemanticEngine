@@ -47,12 +47,6 @@ public class DataOfferingControllerImp implements DataOfferingController {
     }
 
     @Override
-    public ResponseEntity<Mono<Void>> deleteAllOffering() {
-        log.info("DELETE all offerings");
-        return ResponseEntity.ok(dataOfferingService.deleteAllOffering());
-    }
-
-    @Override
     public ResponseEntity<Flux<OfferingIdResponse>> getOfferingList(final int page, final int size) {
         log.info("GET an offering list");
         return ResponseEntity.ok(dataOfferingService.getOfferingList(page, size));

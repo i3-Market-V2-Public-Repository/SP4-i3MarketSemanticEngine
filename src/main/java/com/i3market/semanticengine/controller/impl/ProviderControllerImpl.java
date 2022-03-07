@@ -43,12 +43,6 @@ public class ProviderControllerImpl implements ProviderController {
     }
 
     @Override
-    public ResponseEntity<Mono<Void>> deleteAllProvider() {
-        log.info("DELETE all providers");
-        return ResponseEntity.ok(dataProviderService.deleteAllProvider());
-    }
-
-    @Override
     public ResponseEntity<Mono<Void>> deleteProviderByProviderId(final String providerId) {
         log.info("DELETE provider by providerId");
         return ResponseEntity.ok(dataProviderService.deleteProviderByProviderId(providerId));
