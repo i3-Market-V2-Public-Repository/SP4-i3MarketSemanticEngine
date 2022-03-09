@@ -33,7 +33,6 @@
             <version>2.6.3</version>
         </dependency>
 
-
         <!-- https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-common -->
         <dependency>
             <groupId>org.springdoc</groupId>

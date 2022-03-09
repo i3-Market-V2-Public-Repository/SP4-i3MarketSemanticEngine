@@ -25,7 +25,9 @@ public class ProviderControllerImpl implements ProviderController {
         log.info("Start creating data provider");
         final Mono<DataProviderDto> provider = dataProviderService.createDataProvider(dto);
         log.info("Start creating data provider, success");
+
         return ResponseEntity.ok(provider);
+
     }
 
     @Override
