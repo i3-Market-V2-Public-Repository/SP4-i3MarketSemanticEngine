@@ -42,7 +42,6 @@ public class DataProviderServiceImpl implements DataProviderService {
 
     @Override
     public Mono<DataProviderDto> createDataProvider(final RequestDataProvider dto) {
-        System.out.println(dto.getProviderId());
         if (isNull(dto.getProviderId()) || isNull(dto.getName())) {
             throw new InvalidInputException(HttpStatus.BAD_REQUEST, "ProviderId and Provider name must be provided");
         }
