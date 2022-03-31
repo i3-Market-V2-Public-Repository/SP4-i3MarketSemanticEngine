@@ -1,0 +1,107 @@
+{
+  "provider": "chi",
+  "marketId": "kio8955",
+  "owner": "string",
+  "dataOfferingTitle": "string",
+  "dataOfferingDescription": "string",
+  "category": "string",
+  "status": "string",
+  "dataOfferingExpirationTime": "string",
+  "contractParameters": {
+    "interestOfProvider": "string",
+    "interestDescription": "string",
+    "hasGoverningJurisdiction": "string",
+    "purpose": "string",
+    "purposeDescription": "string",
+    "hasIntendedUse": {
+      "processData": true,
+      "shareDataWithThirdParty": true,
+      "editData": true
+    },
+    "hasLicenseGrant": {
+      "copyData": true,
+      "transferable": true,
+      "exclusiveness": true,
+      "revocable": true
+    }
+  },
+  "hasPricingModel": {
+    "pricingModelName": "string",
+    "basicPrice": 0,
+    "currency": "string",
+    "hasPaymentOnSubscription": {
+      "paymentOnSubscriptionName": "string",
+      "paymentType": "string",
+      "timeDuration": "string",
+      "description": "string",
+      "repeat": "string",
+      "hasSubscriptionPrice": 0
+    },
+    "hasPaymentOnApi": {
+      "paymentOnApiName": "string",
+      "description": "string",
+      "numberOfObject": 0,
+      "hasApiPrice": 0
+    },
+    "hasPaymentOnUnit": {
+      "paymentOnUnitName": "string",
+      "description": "string",
+      "dataUnit": 0,
+      "hasUnitPrice": 0
+    },
+    "hasPaymentOnSize": {
+      "paymentOnSizeName": "string",
+      "description": "string",
+      "dataSize": "string",
+      "hasSizePrice": 0
+    },
+    "hasFreePrice": {
+      "hasPriceFree": true
+    }
+  },
+  "hasDataset": {
+    "title": "string",
+    "keyword": "string",
+    "dataset": "string",
+    "description": "string",
+    "issued": "string",
+    "modified": "string",
+    "temporal": "string",
+    "language": "string",
+    "spatial": "string",
+    "accrualPeriodicity": "string",
+    "temporalResolution": "string",
+    "theme": [
+      "string"
+    ],
+    "distribution": [
+      {
+        "title": "string",
+        "description": "string",
+        "license": "string",
+        "accessRights": "string",
+        "downloadType": "string",
+        "conformsTo": "string",
+        "mediaType": "string",
+        "packageFormat": "string",
+        "accessService": {
+          "conformsTo": "string",
+          "endpointDescription": "string",
+          "endpointURL": "string",
+          "servesDataset": "string",
+          "serviceSpecs": "string"
+        }
+      }
+    ],
+    "datasetInformation": [
+      {
+        "measurementType": "string",
+        "measurementChannelType": "string",
+        "sensorId": "string",
+        "deviceId": "string",
+        "cppType": "string",
+        "sensorType": "string"
+      }
+    ]
+  }
+}
