@@ -102,7 +102,7 @@ public class MapperImpl implements Mapper {
                 .owner(request.getOwner())
                 .dataOfferingTitle(request.getDataOfferingTitle())
                 .dataOfferingDescription(request.getDataOfferingDescription())
-                .category(request.getCategory())
+                .category((request.getCategory().substring(0, 1).toUpperCase() + request.getCategory().substring(1)))  // (request.getCategory.substring(0, 1).toUpperCase() + request.getCategory.substring(1))
                 .status(request.getStatus())
                 .dataOfferingExpirationTime(request.getDataOfferingExpirationTime())
                 .contractParameters(requestToEntity(request.getContractParameters()))
