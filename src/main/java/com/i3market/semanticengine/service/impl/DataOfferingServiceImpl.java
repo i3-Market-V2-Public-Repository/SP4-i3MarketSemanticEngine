@@ -46,8 +46,6 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
     private final WebClient.Builder webClient;
 
-    private final SimpleDateFormat simpleFormat = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss");
-
     @Override
     public Flux<CategoriesList> getCategoryList() {
         return webClient.build().get().uri(categoryListUrl).retrieve()
@@ -122,7 +120,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
     @Override
     public Flux<DataOfferingDto> getOfferingByCategory(final String category, final int page, final int size) {
-        return dataOfferingRepository.findByCategory(category)
+        return dataOfferingRepository.findByCategory(category.strip().toLowerCase())
                 .map(mapper::entityToDto)
                 .sort(compareOfferingTime.reversed())
                 .sort(compareOfferingTitle)
@@ -150,7 +148,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
     public Mono<TotalOfferingResponse> getOfferingByProviderIdAndCategorySorted(final String inputProviderId, final String inputCategory,
                                                                                 final int page, final int size, final String sortBy, final String orderIn) {
         final String providerId = inputProviderId.strip();
-        final String category = inputCategory.strip();
+        final String category = inputCategory.strip().toLowerCase();
         if (providerId.isEmpty() || providerId.isBlank() || providerId.length() == 0) {
             throw new InvalidInputException(HttpStatus.BAD_REQUEST, "You have inputted an invalid providerId");
         } else if (category.isBlank() || category.isEmpty() || category.length() == 0) {
