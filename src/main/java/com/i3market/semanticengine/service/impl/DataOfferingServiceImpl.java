@@ -57,11 +57,11 @@ public class DataOfferingServiceImpl implements DataOfferingService {
     @SneakyThrows
     public Mono<DataOfferingDto> createDataOffering(final RequestDataOffering dto) {
 
-        final Mono<DataProviderDto> dataProvider = dataProviderRepository.findByProviderId(dto.getProvider())
-                .map(mapper::entityToDto);
-        if (isNull(dataProvider.toFuture().get())) {
-            throw new InvalidInputException(HttpStatus.BAD_REQUEST, "We are sorry! The provider `" + dto.getProvider() + "` has not been registered");
-        }
+//        final Mono<DataProviderDto> dataProvider = dataProviderRepository.findByProviderId(dto.getProvider())
+//                .map(mapper::entityToDto);
+//        if (isNull(dataProvider.toFuture().get())) {
+//            throw new InvalidInputException(HttpStatus.BAD_REQUEST, "We are sorry! The provider `" + dto.getProvider() + "` has not been registered");
+//        }
 
         final var entity = mapper.requestToEntity(dto);
         entity.setCreatedAt(Instant.now());

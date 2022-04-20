@@ -34,6 +34,12 @@ public class DataOfferingDto {
 
     String owner;
 
+    String  providerDid;
+
+    String  marketDid;
+
+    String  ownerDid;
+
     @ToString.Include
     String dataOfferingTitle;
 

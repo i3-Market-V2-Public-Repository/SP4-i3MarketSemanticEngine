@@ -41,6 +41,28 @@ public class RequestDataOffering {
     @lombok.Builder.Default
     String owner = "required";
 
+// adding Did Fields
+    @NotNull(message = "providerDid is required")
+    @NotBlank(message = "providerDid is required")
+    @NotEmpty(message = "providerDid is required")
+    @Schema(example = "required", required = true, type = "String")
+    @lombok.Builder.Default
+    String  providerDid;
+
+    @Schema(example = "required", required = true, type = "String")
+    @NotNull(message = "marketDid is required")
+    @NotBlank(message = "marketDid is required")
+    @NotEmpty(message = "marketDid is required")
+    @lombok.Builder.Default
+    String  marketDid;
+
+    @Schema(example = "required", required = true, type = "String")
+    @NotNull(message = "ownerDid is required")
+    @NotBlank(message = "ownerDid is required")
+    @NotEmpty(message = "ownerDid is required")
+    @lombok.Builder.Default
+    String  ownerDid;
+//------------------------
     @ToString.Include
     @Schema(example = "required", required = true, type = "String")
     @NotNull(message = "dataOfferingTitle is required")

@@ -28,6 +28,12 @@ public class DataOffering implements Serializable {
 
     String owner;
 
+    String  providerDid;
+
+    String  marketDid;
+
+    String  ownerDid;
+
     @ToString.Include
     String dataOfferingTitle;
 
