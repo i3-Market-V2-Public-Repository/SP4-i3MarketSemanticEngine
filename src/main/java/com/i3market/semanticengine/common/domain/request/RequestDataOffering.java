@@ -47,21 +47,21 @@ public class RequestDataOffering {
     @NotEmpty(message = "providerDid is required")
     @Schema(example = "required", required = true, type = "String")
     @lombok.Builder.Default
-    String  providerDid;
+    String  providerDid= "required";
 
     @Schema(example = "required", required = true, type = "String")
     @NotNull(message = "marketDid is required")
     @NotBlank(message = "marketDid is required")
     @NotEmpty(message = "marketDid is required")
     @lombok.Builder.Default
-    String  marketDid;
+    String  marketDid ="required";
 
     @Schema(example = "required", required = true, type = "String")
     @NotNull(message = "ownerDid is required")
     @NotBlank(message = "ownerDid is required")
     @NotEmpty(message = "ownerDid is required")
     @lombok.Builder.Default
-    String  ownerDid;
+    String  ownerDid ="required";
 //------------------------
     @ToString.Include
     @Schema(example = "required", required = true, type = "String")
