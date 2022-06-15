@@ -7,6 +7,13 @@ The semantic engine is a data microservice, which can interact with other servic
 
 The semantic engine provides necessary API endpoints in relation to the data offering purpose of the i3Market. Details of each API endpoint can be found in the following sections.
 
+## i3-Market Semantic Models
+You can find the main Semantic Data Models files for i3-Market in github project at
+https://github.com/i3-Market-V2-Public-Repository/SemanticsDataModels
+and the specific files for last version at
+https://github.com/i3-Market-V2-Public-Repository/SemanticsDataModels/tree/public/Version-2
+and definitions for API Template description of Data Offering
+Data Offerings description schema definitions in the API template.pdf
 
 
 ## 3. Use cases of the semantic engine
