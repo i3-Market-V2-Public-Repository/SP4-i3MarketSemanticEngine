@@ -1,7 +1,7 @@
 # i3-Market Semantics Engine
 
 ## 1. Introduction
-The semantic engine is a data microservice, which can interact with other services of the i3-Market for data offering registration. The semantic engine also provides necessary information such as contract parameters, pricing models, etc for other services and users. The repository of the semantic engine on the i3-Market gitlab can be found [here](https://gitlab.com/i3-market/code/wp4/i3marketsemanticengine_mongodb) . The Swagger reference of the semantic engine itself can be found [here](http://95.211.3.244:3000/explorer/#/registration-offering)
+The semantic engine is a data microservice, which can interact with other services of the i3-Market for data offering registration. The semantic engine also provides necessary information such as contract parameters, pricing models, etc for other services and users. The repository of the semantic engine on the i3-Market gitlab can be found [here]https://github.com/i3-Market-V2-Public-Repository/SP4-I3MarketSemanticEngineMongodb) . 
 
 ## 2. Objectives
 
@@ -14,6 +14,43 @@ and the specific files for last version at
 https://github.com/i3-Market-V2-Public-Repository/SemanticsDataModels/tree/public/Version-2
 and definitions for API Template description of Data Offering
 Data Offerings description schema definitions in the API template.pdf
+
+##   How to build the semantic engine docker images and containers
+
+
+The Semantic engine 's repository is stored in Gitlab click here . The semantic engine is developed by Java Spring Boot with interface to metadata registry in MongoDB
+
+a) Install your Docker engine.
+
+b) Create docker image of the semantic engine. Before creating a docker image, it is required to build a ".jar" file of the semantic engine at first.
+
+c) Try the following to create your docker image and run a container for the semantic engine
+
+
+docker build --no-cache -t registry.gitlab.com/i3-market/code/wp4/semantic-engine:latest .
+d) To run with the docker, use the below docker compose
+
+
+ services:
+  semantic-engine-service:
+    container_name: "semantic-engine-service"
+    image: registry.gitlab.com/i3-market/code/wp4/semantic-engine:${SEMANTIC_ENGINE_VERSION}
+    ports:
+      - "8082:8082"
+    restart: always
+    environment:
+      - "SPRING_PROFILES_ACTIVE=test-env"
+
+  mongodb:
+    image: 'mongo:latest'
+    container_name: "semantic-engine-db"
+    command: mongod --port 27018
+    ports:
+      - '27018:27018'
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: YOUR_PASSWORD
 
 
 ## 3. Use cases of the semantic engine
@@ -47,7 +84,7 @@ Example of user registration is shown below:
 
 > ```POST /api/registration/data-offering```
 
-A sample of a data offering can be found [here](https://gitlab.com/i3-market/code/wp4/i3marketsemanticengine_mongodb/-/blob/master/dataOffering.json) in a JSON data format.
+A sample of a data offering can be found [here](hhttps://github.com/i3-Market-V2-Public-Repository/SP4-I3MarketSemanticEngineMongodb/blob/public/dataOffering.json in a JSON data format.
 
 - Update an existing data offering:
 
@@ -92,7 +129,7 @@ A sample of a data offering can be found [here](https://gitlab.com/i3-market/cod
 
 >```GET/api/registration/contract-parameter/{offeringId}/offeringId```
 
-- Get a list of category from distributed storage at its original API endpoint [click here](http://95.211.3.244:3000/explorer/#/registration-offering/getAllRegisteredOfferingsByCategoryUsingGET) :
+- Get a list of category from distributed storage at its original API endpoint  :
 
 >```GET/api/registration/categories-list```
 
@@ -109,11 +146,13 @@ A sample of a data offering can be found [here](https://gitlab.com/i3-market/cod
 
 ## 5. Contact us if you have any issue with the semantic engine
 
-Achille: <achille.zappa@insight-centre.org>
+Mirza Fardeenbaig   mirza.fardeenbaig@insight-centre.org
 
-or
 
-Chi : <chi-hung.le@insight-centre.org>
+
+(Achille: <achille.zappa@insight-centre.org>)
+
+
 
 ## 6. License
 
