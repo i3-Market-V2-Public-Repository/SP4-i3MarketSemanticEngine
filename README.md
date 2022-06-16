@@ -30,7 +30,7 @@ c) Try the following to create your docker image and run a container for the sem
 docker build --no-cache -t registry.gitlab.com/i3-market/code/wp4/semantic-engine:latest .
 d) To run with the docker, use the below docker compose
 
-
+```
  services:
   semantic-engine-service:
     container_name: "semantic-engine-service"
@@ -40,7 +40,8 @@ d) To run with the docker, use the below docker compose
     restart: always
     environment:
       - "SPRING_PROFILES_ACTIVE=test-env"
-
+```
+```
   mongodb:
     image: 'mongo:latest'
     container_name: "semantic-engine-db"
@@ -52,6 +53,7 @@ d) To run with the docker, use the below docker compose
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: YOUR_PASSWORD
 
+```
 
 ## 3. Use cases of the semantic engine
 
