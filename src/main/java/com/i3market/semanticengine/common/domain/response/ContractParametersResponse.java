@@ -15,11 +15,22 @@ public class ContractParametersResponse {
     
     String offeringId;
 
+    Long version;
+
     String provider;
+
+    String providerDid;
+
+    boolean active;
+
+    boolean dataStream;
+
+    boolean personalData;
 
     @ToString.Include
     String category;
 
     ContractParametersDto contractParameters;
+    PricingModelDto hasPricingModel;
 
 }

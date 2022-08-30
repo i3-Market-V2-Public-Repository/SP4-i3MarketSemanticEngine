@@ -28,6 +28,8 @@ public class Distribution implements Serializable {
 
     String packageFormat;
 
+    boolean dataStream;
+
     AccessService accessService;
 
 }

@@ -5,12 +5,15 @@ import com.i3market.semanticengine.common.domain.request.RequestDataOffering;
 import com.i3market.semanticengine.common.domain.response.*;
 import com.i3market.semanticengine.controller.DataOfferingController;
 import com.i3market.semanticengine.service.DataOfferingService;
+import com.i3market.semanticengine.service.impl.TextSearchClass;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -22,16 +25,22 @@ public class DataOfferingControllerImp implements DataOfferingController {
 
     private final DataOfferingService dataOfferingService;
 
+    @Autowired
+    private TextSearchClass textSearchClass;
+
+    @Autowired
+    private TextSearchClass searchClass;
+
     @Override
-    public ResponseEntity<Flux<CategoriesList>> getCategoryList() {
-        return ResponseEntity.ok(dataOfferingService.getCategoryList());
+    public ResponseEntity<Flux<CategoriesList>> getCategoryList(ServerHttpRequest serverHttpRequest) {
+        return ResponseEntity.ok(dataOfferingService.getCategoryList(serverHttpRequest));
     }
 
     @Override
     @SneakyThrows
-    public ResponseEntity<Mono<DataOfferingDto>> createDataOffering(final RequestDataOffering dto) {
+    public ResponseEntity<Mono<DataOfferingDto>> createDataOffering(final RequestDataOffering dto , ServerHttpRequest serverHttpRequest) {
         log.info("POST a new offering");
-        return ResponseEntity.ok(dataOfferingService.createDataOffering(dto));
+        return ResponseEntity.ok(dataOfferingService.createDataOffering(dto, serverHttpRequest));
     }
 
     @Override
@@ -100,4 +109,21 @@ public class DataOfferingControllerImp implements DataOfferingController {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(dataOfferingService.getOfferingTemplate());
     }
+
+    @Override
+    public Flux<DataOfferingDto> getTextSearchMono(String text, int page, int size) {
+        return textSearchClass.getTextSearchReact(text,page,size);
+    }
+
+    @Override
+    public ResponseEntity<Flux<OfferingIdResponse>> getOfferingListonActive(final int page, final int size) {
+        log.info("GET an offering list");
+        return ResponseEntity.ok(dataOfferingService.getOfferingListonActive(page, size));
+    }
+
+    public ResponseEntity<Flux<OfferingIdResponse>> getOfferingListonSharedNetwork(final int page, final int size) {
+        log.info("GET an offering list");
+        return ResponseEntity.ok(dataOfferingService.getOfferingListonSharedNetwork(page, size));
+    }
+
 }

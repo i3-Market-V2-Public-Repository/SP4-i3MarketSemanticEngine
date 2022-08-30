@@ -62,7 +62,7 @@ public class RequestDistribution {
     @NotEmpty(message = "mediaType is required")
     @Schema(example = "JSON", required = true, type = "String")
     @lombok.Builder.Default
-    String mediaType = "require";
+    String mediaType = "required";
 
     @NotNull(message = "packageFormat is required")
     @NotBlank(message = "packageFormat is required")
@@ -70,6 +70,12 @@ public class RequestDistribution {
     @Schema(example = "required", required = true, type = "String")
     @lombok.Builder.Default
     String packageFormat = "require";
+
+    @NotNull(message = "dataStream is required")
+    @NotBlank(message = "dataStream is required")
+    @NotEmpty(message = "dataStream is required")
+    @Schema(example = "false", required = true, type = "boolean")
+    boolean dataStream=false;
 
     RequestAccessService accessService;
 }

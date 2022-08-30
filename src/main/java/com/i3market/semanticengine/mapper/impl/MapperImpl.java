@@ -103,6 +103,10 @@ public class MapperImpl implements Mapper {
                 .providerDid(request.getProviderDid())
                 .marketDid(request.getMarketDid())
                 .ownerDid(request.getOwnerDid())
+                .active(request.isActive())
+                .ownerConsentForm(request.getOwnerConsentForm())
+                .inSharedNetwork(request.isInSharedNetwork())
+                .personalData(request.isPersonalData())
                 .dataOfferingTitle(request.getDataOfferingTitle())
                 .dataOfferingDescription(request.getDataOfferingDescription())
                 .category(request.getCategory().strip().toLowerCase())
@@ -237,6 +241,7 @@ public class MapperImpl implements Mapper {
                 .conformsTo(request.getConformsTo())
                 .mediaType(request.getMediaType())
                 .packageFormat(request.getPackageFormat())
+                .dataStream(request.isDataStream())
                 .accessService(requestToEntity(request.getAccessService()))
                 .build();
     }
@@ -274,6 +279,10 @@ public class MapperImpl implements Mapper {
                 .providerDid(entity.getProviderDid())
                 .marketDid(entity.getMarketDid())
                 .ownerDid(entity.getOwnerDid())
+                .active(entity.isActive())
+                .ownerConsentForm(entity.getOwnerConsentForm())
+                .inSharedNetwork(entity.isInSharedNetwork())
+                .personalData(entity.isPersonalData())
                 .dataOfferingTitle(entity.getDataOfferingTitle())
                 .dataOfferingDescription(entity.getDataOfferingDescription())
                 .category(entity.getCategory())
@@ -412,6 +421,7 @@ public class MapperImpl implements Mapper {
                 .conformsTo(entity.getConformsTo())
                 .mediaType(entity.getMediaType())
                 .packageFormat(entity.getPackageFormat())
+                .dataStream(entity.isDataStream())
                 .accessService(entityToDto(entity.getAccessService()))
                 .build();
     }
@@ -444,6 +454,11 @@ public class MapperImpl implements Mapper {
     public DataOffering dtoToEntity(final DataOfferingDto dto) {
         return DataOffering.builder()
                 .owner(dto.getOwner())
+                //.providerDid(dto.getProviderDid())
+                .active(dto.isActive())
+                .ownerConsentForm(dto.getOwnerConsentForm())
+                .inSharedNetwork(dto.isInSharedNetwork())
+                .personalData(dto.isPersonalData())
                 .dataOfferingTitle(dto.getDataOfferingTitle())
                 .dataOfferingDescription(dto.getDataOfferingDescription())
                 .category(dto.getCategory().strip().toLowerCase())
@@ -460,9 +475,15 @@ public class MapperImpl implements Mapper {
     public ContractParametersResponse contractParameterDto(final DataOffering entity) {
         return ContractParametersResponse.builder()
                 .offeringId(entity.getId())
+                .version(entity.getVersion())
                 .provider(entity.getProvider())
+                .providerDid(entity.getProviderDid())
+                .active(entity.isActive())
+                .dataStream(entity.getHasDataset().getDistribution().get(0).isDataStream())
+                .personalData(entity.isPersonalData())
                 .category(entity.getCategory())
                 .contractParameters(entityToDto(entity.getContractParameters()))
+                .hasPricingModel(entityToDto(entity.getHasPricingModel()))
                 .build();
     }
 

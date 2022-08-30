@@ -16,7 +16,7 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 @Value
 @Builder(builderClassName = "Builder", toBuilder = true)
 @JsonDeserialize(builder = DataOfferingDto.Builder.class)
-@ToString(onlyExplicitlyIncluded = true)
+//@ToString(onlyExplicitlyIncluded = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DataOfferingDto {
 
@@ -39,6 +39,14 @@ public class DataOfferingDto {
     String  marketDid;
 
     String  ownerDid;
+
+    boolean active;
+
+    String ownerConsentForm;
+
+    boolean inSharedNetwork;
+
+    boolean personalData;
 
     @ToString.Include
     String dataOfferingTitle;

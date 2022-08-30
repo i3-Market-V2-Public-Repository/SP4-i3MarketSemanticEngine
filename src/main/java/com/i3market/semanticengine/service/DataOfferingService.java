@@ -3,22 +3,28 @@ package com.i3market.semanticengine.service;
 import com.i3market.semanticengine.common.domain.CategoriesList;
 import com.i3market.semanticengine.common.domain.request.RequestDataOffering;
 import com.i3market.semanticengine.common.domain.response.*;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
 
 public interface DataOfferingService {
 
-    Flux<CategoriesList> getCategoryList();
+    Flux<CategoriesList> getCategoryList(ServerHttpRequest serverHttpRequest);
 
-    Mono<DataOfferingDto> createDataOffering(final RequestDataOffering dto) throws ExecutionException, InterruptedException;
+    Mono<DataOfferingDto> createDataOffering(final RequestDataOffering dto, ServerHttpRequest serverHttpRequest) throws ExecutionException, InterruptedException;
 
     Mono<Void> deleteAllOffering();
 
     Mono<DataOfferingDto> getDataOfferingById(final String id);
 
     Flux<OfferingIdResponse> getOfferingList(final int page, final int size);
+
+    Flux<OfferingIdResponse> getOfferingListonActive(final int page, final int size);
+
+    Flux<OfferingIdResponse> getOfferingListonSharedNetwork(final int page, final int size);
 
     Mono<DataOfferingDto> updateDataOffering(final DataOfferingDto request);
 
@@ -36,4 +42,5 @@ public interface DataOfferingService {
     Mono<Void> deleteDataOfferingById(final String offeringId);
 
     String getOfferingTemplate();
+   // Flux<DataOfferingDto> gettingfromAnotherNodeByCategory(String category , ServerHttpRequest serverHttpRequest ) ;
 }

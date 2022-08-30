@@ -1,6 +1,7 @@
 package com.i3market.semanticengine.common.domain.request;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -62,6 +63,23 @@ public class RequestDataOffering {
     @NotEmpty(message = "ownerDid is required")
     @lombok.Builder.Default
     String  ownerDid ="required";
+
+    @Schema(example = "false", required = true, type = "boolean")
+    @NotNull(message = "active is required")
+    boolean active ;
+
+
+    @Schema(example = "required", required = true, type = "String")
+    @NotNull(message = "ownerConsentForm is required")
+    String ownerConsentForm;
+
+    @Schema(example = "false", required = true, type = "boolean")
+    @NotNull(message = "inSharedNetwork is required")
+    boolean inSharedNetwork ;
+
+    @Schema(example = "false", required = true, type = "boolean")
+    @NotNull(message = "personalData is required")
+    boolean personalData ;
 //------------------------
     @ToString.Include
     @Schema(example = "required", required = true, type = "String")

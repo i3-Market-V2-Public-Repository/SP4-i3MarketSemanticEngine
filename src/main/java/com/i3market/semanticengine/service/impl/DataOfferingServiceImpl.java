@@ -1,8 +1,14 @@
 package com.i3market.semanticengine.service.impl;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.GsonBuilder;
 import com.i3market.semanticengine.common.domain.CategoriesList;
 import com.i3market.semanticengine.common.domain.entity.DataOffering;
+import com.i3market.semanticengine.common.domain.entity.OfferingIdRes;
 import com.i3market.semanticengine.common.domain.request.*;
 import com.i3market.semanticengine.common.domain.response.*;
 import com.i3market.semanticengine.exception.InvalidInputException;
@@ -11,24 +17,31 @@ import com.i3market.semanticengine.mapper.Mapper;
 import com.i3market.semanticengine.repository.DataOfferingRepository;
 import com.i3market.semanticengine.repository.DataProviderRepository;
 import com.i3market.semanticengine.service.DataOfferingService;
+import eu.i3market.seedsindex.DataCategory;
+import eu.i3market.seedsindex.SearchEngineIndexRecord;
+import eu.i3market.seedsindex.SeedsIndex;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import okhttp3.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.text.SimpleDateFormat;
+import java.io.IOException;
+import java.net.*;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
-
-import static java.util.Objects.isNull;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Service
@@ -46,8 +59,10 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
     private final WebClient.Builder webClient;
 
+
     @Override
-    public Flux<CategoriesList> getCategoryList() {
+    public Flux<CategoriesList> getCategoryList(ServerHttpRequest serverHttpRequest) {
+
         return webClient.build().get().uri(categoryListUrl).retrieve()
                 .bodyToFlux(CategoriesList.class)
                 .log(log.getName(), Level.FINE);
@@ -55,21 +70,53 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
     @Override
     @SneakyThrows
-    public Mono<DataOfferingDto> createDataOffering(final RequestDataOffering dto) {
+    public Mono<DataOfferingDto> createDataOffering(final RequestDataOffering dto, ServerHttpRequest serverHttpRequest) {
 
-//        final Mono<DataProviderDto> dataProvider = dataProviderRepository.findByProviderId(dto.getProvider())
-//                .map(mapper::entityToDto);
-//        if (isNull(dataProvider.toFuture().get())) {
-//            throw new InvalidInputException(HttpStatus.BAD_REQUEST, "We are sorry! The provider `" + dto.getProvider() + "` has not been registered");
-//        }
+        final Flux<CategoriesList> log = webClient.build().get().uri("http://95.211.3.244:7500/data_categories").retrieve()
+                .bodyToFlux(CategoriesList.class)
+                .log(DataOfferingServiceImpl.log.getName(), Level.FINE);
+
+        System.out.println("Category List");
+        log.subscribe(e-> System.out.println(e));
+      //  System.out.println(serverHttpRequest.getURI());
+        final Mono<URI> just = Mono.just(serverHttpRequest.getURI());
+       just.subscribe(e->System.out.println("Mono   "+e));
+        final String substring = String.valueOf(serverHttpRequest.getURI()).substring(0, 19);
+        System.out.println("URI  "+substring);
 
         final var entity = mapper.requestToEntity(dto);
         entity.setCreatedAt(Instant.now());
+
         final var newEntity = dataOfferingRepository.save(entity);
-        return newEntity.log(log.getName(), Level.FINE)
-                .onErrorMap(RuntimeException.class,
-                        err -> new InvalidInputException(HttpStatus.BAD_REQUEST, "Error"))
-                .map(mapper::entityToDto);
+
+        OkHttpClient client = new OkHttpClient();
+
+        //this is a documentation test
+        RequestBody requestBody = RequestBody.create(MediaType.parse("application/json"),"{\n" +
+                "  \"message\": {\"name\":\""+ entity +"\"},\n" +
+                "  \"receiver_id\": \"offering.new\"\n" +
+                "}");
+
+
+        String val = null;
+        try {
+            final Request build = new Request.Builder()
+                    .url(substring+":3000/notification-manager-oas/api/v1/notification/service")
+                    .post(requestBody)
+                    .build();
+            Response response = client.newCall(build).execute();
+            val = response.body().string();
+            System.out.println(val);
+            System.out.println(response.code());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        finally{
+            return newEntity.log(DataOfferingServiceImpl.log.getName(), Level.FINE)
+                    .onErrorMap(RuntimeException.class,
+                            err -> new InvalidInputException(HttpStatus.BAD_REQUEST, "Error"))
+                    .map(mapper::entityToDto);
+        }
     }
 
     @Override
@@ -95,6 +142,29 @@ public class DataOfferingServiceImpl implements DataOfferingService {
                 .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "We are sorry! No data offering found.")))
                 .map(e -> OfferingIdResponse.builder().offering(e.getDataOfferingId()).build());
     }
+    @Override
+    public Flux<OfferingIdResponse> getOfferingListonActive(final int page, final int size) {
+        return dataOfferingRepository.findAll()
+                .log(log.getName(), Level.FINE)
+                .map(mapper::entityToDto)
+                .filter(e-> e.isActive() == true)
+                .skip(page * size).take(size)
+                .sort(compareOfferingTime.reversed())
+                .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "We are sorry! No data offering found.")))
+                .map(e -> OfferingIdResponse.builder().offering(e.getDataOfferingId()).build());
+    }
+
+    @Override
+    public Flux<OfferingIdResponse> getOfferingListonSharedNetwork(final int page, final int size) {
+        return dataOfferingRepository.findAll()
+                .log(log.getName(), Level.FINE)
+                .map(mapper::entityToDto)
+                .filter(e-> e.isInSharedNetwork()==true)
+                .skip(page * size).take(size)
+                .sort(compareOfferingTime.reversed())
+                .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "We are sorry! No data offering found.")))
+                .map(e -> OfferingIdResponse.builder().offering(e.getDataOfferingId()).build());
+    }
 
     @Override
     public Mono<DataOfferingDto> updateDataOffering(final DataOfferingDto body) {
@@ -106,6 +176,16 @@ public class DataOfferingServiceImpl implements DataOfferingService {
                 .flatMap(dataOfferingRepository::save)
                 .map(mapper::entityToDto);
     }
+
+//    public Mono<DataOfferingDto> updateDataOffering(final DataOfferingDto body){
+//         DataOffering dataOffering = mapper.dtoToEntity(body);
+//        System.out.println("\n data offering two \n "+body.toString());
+//        System.out.println("\n data offering one \n "+dataOffering.toString());
+////        final Mono<DataOffering> byId = dataOfferingRepository.findById(body.getDataOfferingId());
+////        byId.subscribe(e-> System.out.println("data offering \n"+e.toString()));
+//
+//        return null;
+//    }
 
     @Override
     public Flux<DataOfferingDto> getOfferingByProvider(final String provider, final int page, final int size) {
@@ -256,6 +336,11 @@ public class DataOfferingServiceImpl implements DataOfferingService {
     private DataOffering offeringTransform(final DataOffering updateEntity, final DataOffering currentEntity) {
         return currentEntity.toBuilder()
                 .owner(updateEntity.getOwner())
+                //.providerDid(updateEntity.getProviderDid())
+                .active(updateEntity.isActive())
+                .ownerConsentForm(updateEntity.getOwnerConsentForm())
+                .inSharedNetwork(updateEntity.isInSharedNetwork())
+                .personalData(updateEntity.isPersonalData())
                 .dataOfferingTitle(updateEntity.getDataOfferingTitle())
                 .dataOfferingDescription(updateEntity.getDataOfferingDescription())
                 .category(updateEntity.getCategory())
@@ -267,8 +352,545 @@ public class DataOfferingServiceImpl implements DataOfferingService {
                 .build();
     }
 
+    //--------------------Federated Search----------------------
+
+
+   // @Async("asyncExecutor")
+
+    public Flux<DataOfferingDto> gettingfromAnotherNodeByCategory(String category , ServerHttpRequest serverHttpRequest  )   {
+
+        String address = null;
+        String key = "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26";
+        System.out.println("Value of address  " + address);
+        try {
+            address = getURi(serverHttpRequest).get();
+            System.out.println("address value in try and catch block   " +address);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+         String location=null;
+        try {
+            location = getLocation(key, address, category).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Getting Value of Location " + location);
+
+        System.out.println();
+        return webClient.build().get().uri(location+"8082/api/registration/offering/"+category.toLowerCase()).retrieve()
+                .bodyToFlux(DataOfferingDto.class)
+                .log(log.getName(), Level.FINE);
+
+    }
+
+
+    //  -----------ADDING CATEGORY----------------------
+
+
+    @Async("asyncExecutor")
+    public Mono<Void> addDataCategory(String category , String key , ServerHttpRequest serverHttpRequest) {
+        System.out.println(serverHttpRequest.getURI());
+        final String substring = String.valueOf(serverHttpRequest.getURI()).substring(0, 19);
+        System.out.println("URI  "+substring);
+
+        String address =substring+":8545";
+
+        SeedsIndex seedsIndex = new SeedsIndex(address, key );
+
+        try{
+
+            seedsIndex.init();
+
+            final String myNodeId = seedsIndex.getMyNodeId();
+
+            final Optional<SearchEngineIndexRecord> indexRecordByNodeId = seedsIndex.getIndexRecordByNodeId(myNodeId);
+
+            ArrayList<DataCategory> categoriesList = new ArrayList<>();
+            final DataCategory[] dataCategories =
+                    indexRecordByNodeId
+                            .map(e -> e.getCategories()).get();
+
+            Arrays.stream(dataCategories).forEach(e->{
+                System.out.println(e.name());
+                categoriesList.add(e);
+            });
+
+            if(categoriesList.size()>0 && categoriesList.size()<2) {
+                System.out.println("Inside box 1");
+                System.out.println(categoriesList.get(0));
+                seedsIndex.setMyIndexRecord(new URI(address),
+                        new DataCategory[]{
+
+                                DataCategory.byLabel(String.valueOf(categoriesList.get(0))),
+                                DataCategory.byLabel(category)
+
+                        });
+            }
+            else if(categoriesList.size()>1 && categoriesList.size()<3) {
+                System.out.println("Inside box 2");
+                seedsIndex.setMyIndexRecord(new URI(address),
+                        new DataCategory[]{
+                                DataCategory.byLabel(String.valueOf(categoriesList.get(0))),
+                                DataCategory.byLabel(String.valueOf(categoriesList.get(1))),
+                                DataCategory.byLabel(category)
+
+                        });
+            }
+            else if(categoriesList.size()>2 && categoriesList.size()<4) {
+                System.out.println("Inside box 3");
+                seedsIndex.setMyIndexRecord(new URI(address),
+                        new DataCategory[]{
+                                DataCategory.byLabel(String.valueOf(categoriesList.get(0))),
+                                DataCategory.byLabel(String.valueOf(categoriesList.get(1))),
+                                DataCategory.byLabel(String.valueOf(categoriesList.get(2))),
+                                DataCategory.byLabel(category)
+                        });
+            }
+            else if(categoriesList.size()==4) {
+                System.out.println("Inside box 4");
+                ArrayList<DataCategory> categoriesList2 = new ArrayList<>();
+                categoriesList2.add(0,categoriesList.get(1));
+                categoriesList2.add(1,categoriesList.get(2));
+                categoriesList2.add(2,categoriesList.get(3));
+
+                seedsIndex.setMyIndexRecord(new URI(address),
+                        new DataCategory[]{
+
+                                DataCategory.byLabel(String.valueOf(categoriesList2.get(0))),
+                                DataCategory.byLabel(String.valueOf(categoriesList2.get(1))),
+                                DataCategory.byLabel(String.valueOf(categoriesList2.get(2))),
+                                DataCategory.byLabel(category)
+
+                        });
+            }
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        finally {
+            seedsIndex.shutdown();
+        }
+
+        return null;
+    }
+
+
+    @Async("asyncExecutor")
+    public void name(ServerHttpRequest serverHttpRequest ){
+
+        final String substring1 = String.valueOf(serverHttpRequest.getURI()).substring(0, 19);
+
+        String addr ="http://95.211.3.250";
+        System.out.println("value of http request "+addr);
+        // 0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26
+        SeedsIndex seedsIndex = new SeedsIndex( addr+ ":8545",
+                "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+
+        try {
+
+            seedsIndex.init();
+
+            System.out.println("Getting initiated");
+            final Collection<SearchEngineIndexRecord> byDataCategory = seedsIndex.findByDataCategory(DataCategory.byLabel("economy"));
+            final Iterator<SearchEngineIndexRecord> iterator = byDataCategory.iterator();
+
+            System.out.println("Getting Location");
+            final URI location1 = iterator.next().getLocation();
+            final String substring = String.valueOf(location1).substring(0, 20);
+            System.out.println(" value of SubString "+substring);
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (JsonParseException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        finally {
+            seedsIndex.shutdown();
+        }
+
+    }
+
+
+    public List<OfferingIdRes> gettingListOfOffering(  ServerHttpRequest  serverHttpRequest) throws ExecutionException, InterruptedException {
+       String address =getURi(serverHttpRequest).get();
+
+        //  address = getURi(serverHttpRequest).get();
+        SeedsIndex seedsIndex = new SeedsIndex(address + ":8545",
+                "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+        final List<String> locations = getLocations(seedsIndex);
+        locations.stream().forEach(e-> System.out.println(e));
+        Set<String> loca = new HashSet<>(locations);
+
+
+        loca.stream().forEach(e-> System.out.println(e));
+
+
+          locations.stream().map(e-> e.substring(0,19))
+                  .forEach(e-> System.out.println(e));
+        System.out.println(locations.get(0).substring(0, 19));
+       // final Flux<OfferingIdResponse> offeringIdResponseFlux = webClient.build().get().uri("http://95.211.3.250:8082/api/registration/offerings-list").retrieve().bodyToFlux(OfferingIdResponse.class);
+
+        OkHttpClient client = new OkHttpClient();
+
+        List<OfferingIdRes> ArrList = new ArrayList<>();
+
+        System.out.println("Value of size "+ locations.size());
+        for(int i=0; i<locations.size();i++){
+            System.out.println("Value of i ="+i);
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/offerings-list").build();
+
+            ObjectMapper obj = new ObjectMapper();
+            String val;
+            try {
+                final Response execute = client.newCall(request).execute();
+                val =execute.body().string();
+                System.out.println( val);
+                obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+                obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES,true);
+                obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE,true);
+                obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                final List<OfferingIdRes> o= obj.readValue(val, obj.getTypeFactory().constructParametricType(List.class, OfferingIdRes.class));
+                System.out.println("After  List");
+                o.stream().forEach(e-> ArrList.add(e));
+                o.stream().forEach(e-> System.out.println(e.toString()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        return ArrList;
+    }
+
+
+    public List<OfferingIdRes> gettingFedListOfOfferingOnSharedNetwork(  ServerHttpRequest  serverHttpRequest) throws ExecutionException, InterruptedException {
+        String address =getURi(serverHttpRequest).get();
+
+        //  address = getURi(serverHttpRequest).get();
+        SeedsIndex seedsIndex = new SeedsIndex(address + ":8545",
+                "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+        final List<String> locations = getLocations(seedsIndex);
+        locations.stream().forEach(e-> System.out.println(e));
+        Set<String> loca = new HashSet<>(locations);
+
+
+        loca.stream().forEach(e-> System.out.println(e));
+
+
+        locations.stream().map(e-> e.substring(0,19))
+                .forEach(e-> System.out.println(e));
+        System.out.println(locations.get(0).substring(0, 19));
+        // final Flux<OfferingIdResponse> offeringIdResponseFlux = webClient.build().get().uri("http://95.211.3.250:8082/api/registration/offerings-list").retrieve().bodyToFlux(OfferingIdResponse.class);
+
+        OkHttpClient client = new OkHttpClient();
+
+        List<OfferingIdRes> ArrList = new ArrayList<>();
+
+        System.out.println("Value of size "+ locations.size());
+        for(int i=0; i<locations.size();i++){
+            System.out.println("Value of i ="+i);
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/offerings-list/on-SharedNetwork").build();
+
+            ObjectMapper obj = new ObjectMapper();
+            String val;
+            try {
+                final Response execute = client.newCall(request).execute();
+                val =execute.body().string();
+                System.out.println( val);
+                obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+                obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES,true);
+                obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE,true);
+                obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                final List<OfferingIdRes> o= obj.readValue(val, obj.getTypeFactory().constructParametricType(List.class, OfferingIdRes.class));
+                System.out.println("After  List");
+                o.stream().forEach(e-> ArrList.add(e));
+                o.stream().forEach(e-> System.out.println(e.toString()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        return ArrList;
+    }
+
+
+    public List<OfferingIdRes> gettingFedListOfOfferingOnActive(  ServerHttpRequest  serverHttpRequest) throws ExecutionException, InterruptedException {
+        String address =getURi(serverHttpRequest).get();
+
+        //  address = getURi(serverHttpRequest).get();
+        SeedsIndex seedsIndex = new SeedsIndex(address + ":8545",
+                "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+        final List<String> locations = getLocations(seedsIndex);
+        locations.stream().forEach(e-> System.out.println(e));
+        Set<String> loca = new HashSet<>(locations);
+
+        loca.stream().forEach(e-> System.out.println(e));
+
+        locations.stream().map(e-> e.substring(0,19))
+                .forEach(e-> System.out.println(e));
+        System.out.println(locations.get(0).substring(0, 19));
+        // final Flux<OfferingIdResponse> offeringIdResponseFlux = webClient.build().get().uri("http://95.211.3.250:8082/api/registration/offerings-list").retrieve().bodyToFlux(OfferingIdResponse.class);
+
+        OkHttpClient client = new OkHttpClient();
+
+        List<OfferingIdRes> ArrList = new ArrayList<>();
+
+        System.out.println("Value of size "+ locations.size());
+        for(int i=0; i<locations.size();i++){
+            System.out.println("Value of i ="+i);
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/offerings-list/on-active").build();
+
+            ObjectMapper obj = new ObjectMapper();
+            String val;
+            try {
+                final Response execute = client.newCall(request).execute();
+                val =execute.body().string();
+                System.out.println( val);
+                obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+                obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES,true);
+                obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE,true);
+                obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                final List<OfferingIdRes> o= obj.readValue(val, obj.getTypeFactory().constructParametricType(List.class, OfferingIdRes.class));
+                System.out.println("After  List");
+                o.stream().forEach(e-> ArrList.add(e));
+                o.stream().forEach(e-> System.out.println(e.toString()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        return ArrList;
+    }
+
+
+    public List<DataOfferingDto> gettingFedListOfOfferingTextSearch(  ServerHttpRequest  serverHttpRequest , String text) throws ExecutionException, InterruptedException {
+        String address =getURi(serverHttpRequest).get();
+
+        //  address = getURi(serverHttpRequest).get();
+        SeedsIndex seedsIndex = new SeedsIndex(address + ":8545",
+                "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+        final List<String> locations = getLocations(seedsIndex);
+        locations.stream().forEach(e-> System.out.println(e));
+        Set<String> loca = new HashSet<>(locations);
+
+
+        loca.stream().forEach(e-> System.out.println(e));
+
+
+        locations.stream().map(e-> e.substring(0,19))
+                .forEach(e-> System.out.println(e));
+        System.out.println(locations.get(0).substring(0, 19));
+        // final Flux<OfferingIdResponse> offeringIdResponseFlux = webClient.build().get().uri("http://95.211.3.250:8082/api/registration/offerings-list").retrieve().bodyToFlux(OfferingIdResponse.class);
+
+        OkHttpClient client = new OkHttpClient();
+
+        List<DataOfferingDto> ArrList = new ArrayList<>();
+
+        System.out.println("Value of size "+ locations.size());
+        for(int i=0; i<locations.size();i++){
+            System.out.println("Value of i ="+i);
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/textSearch/text/"+text).build();
+
+            ObjectMapper obj = new ObjectMapper();
+            String val;
+            try {
+                final Response execute = client.newCall(request).execute();
+                val =execute.body().string();
+                System.out.println( val);
+                obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+                obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES,true);
+                obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE,true);
+                obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                obj.registerModule( new JavaTimeModule());
+                final List<DataOfferingDto> o= obj.readValue(val, obj.getTypeFactory().constructParametricType(List.class, DataOfferingDto.class));
+                System.out.println("After  List");
+                o.stream().forEach(e-> ArrList.add(e));
+                o.stream().forEach(e-> System.out.println(e.toString()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        return ArrList;
+    }
+
+
+    public DataOfferingDto gettingFederatedOffering(String offeringID , ServerHttpRequest  serverHttpRequest){
+        String address = null;
+        try {
+            address = getURi(serverHttpRequest).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        SeedsIndex seedsIndex = new SeedsIndex(address + ":8545",
+                "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+        final List<String> locations = getLocations(seedsIndex);
+
+        locations.stream().map(e-> e.substring(0,19))
+                .forEach(e-> System.out.println(e));
+
+        System.out.println(locations.get(0).substring(0, 19) );
+
+        OkHttpClient client = new OkHttpClient();
+        DataOfferingDto dataOfferingDto = null;
+        for(int i =0; i<locations.size(); i++){
+            Request request = new Request.Builder()
+                    .get()
+                    .url(locations.get(i).substring(0,19)+":8082/api/registration/offering/"+offeringID+"/offeringId")
+                    .build();
+            ObjectMapper obj = new ObjectMapper();
+            String val;
+            try {
+                final Response execute = client.newCall(request).execute();
+
+                System.out.println(i+"  Value of code "+ execute.code());
+                if(execute.code()!=404){
+                    val =execute.body().string();
+                    obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+                    obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES,true);
+                    obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE,true);
+                    obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                    obj.registerModule( new JavaTimeModule());
+                    dataOfferingDto = obj.readValue(val, DataOfferingDto.class);
+                    break;
+                }
+                else if(i== locations.size() -1 && execute.code()==404){
+                    throw new NotFoundException(HttpStatus.NOT_FOUND, "Sorry Offering Id not found");
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        return dataOfferingDto;
+    }
+
+
+    public List<CategoriesList> getRegisteredCategories(ServerHttpRequest serverHttpRequest , String key ){
+
+        String address = null;
+        try {
+            address = getURi(serverHttpRequest).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        //  String address = "http://95.211.3.251:8545";
+
+        SeedsIndex seedsIndex = new SeedsIndex(address+":8545", key);
+
+        try {
+            seedsIndex.init();
+            final Optional<SearchEngineIndexRecord> indexRecordByNodeId = seedsIndex.getIndexRecordByNodeId(seedsIndex.getMyNodeId());
+           return Arrays.stream(indexRecordByNodeId.get()
+                            .getCategories())
+                            .map(e -> CategoriesList.builder()
+                            .name(e.name())
+                            .description(e.description())
+                            .build()).collect(Collectors.toList());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+
+    @Async("asyncExecutor")
+    private Future<String> getLocation(String key , String address , String category ) {
+
+        SeedsIndex seedsIndex = new SeedsIndex(address + ":8545",
+                key);
+        // 0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26
+
+        try {
+            seedsIndex.init();
+
+            System.out.println("Getting initiated");
+            final Collection<SearchEngineIndexRecord> byDataCategory = seedsIndex.findByDataCategory(DataCategory.byLabel(category));
+            final Iterator<SearchEngineIndexRecord> iterator = byDataCategory.iterator();
+
+            System.out.println("Getting Location");
+            final URI location1 = iterator.next().getLocation();
+            final AsyncResult<String> stringAsyncResult = new AsyncResult<>(String.valueOf(location1).substring(0, 20));
+
+            return stringAsyncResult;
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (JsonParseException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+       finally {
+            seedsIndex.shutdown();
+        }
+        return null;
+    }
+
+
+    public  List<String>getLocations(SeedsIndex seedsIndex){
+        List<String>  location= new ArrayList<>();
+        try {
+
+            seedsIndex.init();
+            final Collection<SearchEngineIndexRecord> byDataCategory = seedsIndex.findByDataCategory(null);
+            for(var se : byDataCategory){
+                location.add(String.valueOf(se.getLocation())) ;
+            }
+            return location;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        finally {
+            seedsIndex.shutdown();
+        }
+        return null;
+    }
+
+    @Async("asyncExecutor")
+    public Future<String> getURi(ServerHttpRequest  serverHttpRequest){
+
+        System.out.println("Getting URI "+serverHttpRequest.getURI());
+        System.out.println("Getting remote hostString "+serverHttpRequest.getRemoteAddress().getHostString());
+        System.out.println("Getting path with application  "+serverHttpRequest.getPath().pathWithinApplication().value());
+        System.out.println("Getting remote hostName "+serverHttpRequest.getRemoteAddress().getAddress().getHostName());
+        System.out.println("Getting local hostString "+serverHttpRequest.getLocalAddress().getHostString());
+      return   new AsyncResult<>(String.valueOf(serverHttpRequest.getURI()).substring(0, 19)) ;
+
+    }
+
+
+        //----------------------------------------------------------
+
 
     final Comparator<DataOfferingDto> compareOfferingTime = Comparator.comparing(DataOfferingDto::getCreatedAt);
     final Comparator<DataOfferingDto> compareOfferingTitle = Comparator.comparing(DataOfferingDto::getDataOfferingTitle);
     final Comparator<DataOfferingDto> compareByProvider = Comparator.comparing(DataOfferingDto::getProvider);
+
 }

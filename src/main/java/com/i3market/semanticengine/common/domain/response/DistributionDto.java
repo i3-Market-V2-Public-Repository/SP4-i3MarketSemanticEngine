@@ -35,6 +35,8 @@ public class DistributionDto {
 
     String packageFormat;
 
+    boolean dataStream;
+
     AccessServiceDto accessService;
 
     @JsonPOJOBuilder(withPrefix = EMPTY)

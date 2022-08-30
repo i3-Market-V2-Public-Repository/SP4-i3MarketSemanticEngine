@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.SneakyThrows;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -26,11 +27,11 @@ public interface DataOfferingController {
 
     @GetMapping("/categories-list")
     @Operation(summary = "GET a list of category")
-    ResponseEntity<Flux<CategoriesList>> getCategoryList();
+    ResponseEntity<Flux<CategoriesList>> getCategoryList(ServerHttpRequest serverHttpRequest);
 
     @PostMapping("/data-offering")
     @Operation(summary = "POST register a new offering")
-    ResponseEntity<Mono<DataOfferingDto>> createDataOffering(@Valid @NotNull @RequestBody final RequestDataOffering request) throws ExecutionException, InterruptedException;
+    ResponseEntity<Mono<DataOfferingDto>> createDataOffering(@Valid @NotNull @RequestBody final RequestDataOffering request, ServerHttpRequest serverHttpRequest) throws ExecutionException, InterruptedException;
 
     @PutMapping("/update-offering")
     @Operation(summary = "UPDATE an existing offering")
@@ -40,10 +41,19 @@ public interface DataOfferingController {
     @Operation(summary = "GET an offering by offeringId")
     ResponseEntity<Mono<DataOfferingDto>> getDataOfferingById(@PathVariable(name = "id") final String id);
 
+
     @GetMapping("/offerings-list")
     @Operation(summary = "GET a list of all offering")
     ResponseEntity<Flux<OfferingIdResponse>> getOfferingList(@RequestParam(value = "page", defaultValue = "0") final int page,
                                                              @RequestParam(value = "size", defaultValue = "5") final int size);
+    @GetMapping("/offerings-list/on-active")
+    @Operation(summary = "GET a list of all offering on active state")
+    ResponseEntity<Flux<OfferingIdResponse>> getOfferingListonActive(@RequestParam(value = "page", defaultValue = "0") final int page,
+                                                                     @RequestParam(value = "size", defaultValue = "5") final int size);
+    @GetMapping("/offerings-list/on-SharedNetwork")
+    @Operation(summary = "GET a list of all offering on Shared Network")
+    ResponseEntity<Flux<OfferingIdResponse>> getOfferingListonSharedNetwork(@RequestParam(value = "page", defaultValue = "0") final int page,
+                                                                            @RequestParam(value = "size", defaultValue = "5") final int size);
 
     @GetMapping("/offering/{id}/providerId")
     @Operation(summary = "GET an a list of offering for a provider")
@@ -93,4 +103,8 @@ public interface DataOfferingController {
     @SneakyThrows
     ResponseEntity<String> getOfferingTemplate() throws IOException, ClassNotFoundException, NoSuchFieldException, InstantiationException, IllegalAccessException;
 
+    @GetMapping("/textSearch/text/{text}")
+    @Operation(summary = "Get Offering/Offerings based on keyword/text")
+    Flux<DataOfferingDto> getTextSearchMono(@PathVariable(name = "text") String text, @RequestParam(value = "page", defaultValue = "0") final int page,
+                                                   @RequestParam(value = "size", defaultValue = "5") final int size);
 }

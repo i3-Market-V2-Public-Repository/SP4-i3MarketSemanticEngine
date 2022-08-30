@@ -1,11 +1,19 @@
 package com.i3market.semanticengine;
 
+import com.i3market.semanticengine.common.domain.entity.DataOffering;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
+import org.springframework.data.mongodb.core.query.TextCriteria;
+import org.springframework.data.mongodb.core.query.TextQuery;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.net.InetAddress;
@@ -19,7 +27,10 @@ import java.net.UnknownHostException;
 
 @Log4j2
 @SpringBootApplication
-public class SemanticEngineApplication {
+@EnableMongoRepositories
+public class SemanticEngineApplication  {
+
+
 
     public static void main(final String[] args) {
         final SpringApplication app = new SpringApplication(SemanticEngineApplication.class);
