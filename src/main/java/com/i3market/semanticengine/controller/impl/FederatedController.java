@@ -125,4 +125,9 @@ public class FederatedController {
         }
         return  null;
     }
+//    @GetMapping("/getOfferingByActiveAndShareDataWithThirdParty/{active}/{shareDataWithThirdParty}")
+//    public Flux<DataOfferingDto> getByActiveOrShareDataWithThirdParty(@PathVariable(name = "active") boolean active
+//            ,@PathVariable(name = "shareDataWithThirdParty") boolean shareDataWithThirdParty){
+//       return dataOfferingService.getByActiveAndShareDataWithThirdParty(active, shareDataWithThirdParty);
+//    }
 }

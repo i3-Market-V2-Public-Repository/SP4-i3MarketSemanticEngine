@@ -6,6 +6,7 @@ import com.i3market.semanticengine.common.domain.response.*;
 import com.i3market.semanticengine.controller.DataOfferingController;
 import com.i3market.semanticengine.service.DataOfferingService;
 import com.i3market.semanticengine.service.impl.TextSearchClass;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -14,6 +15,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -74,6 +78,13 @@ public class DataOfferingControllerImp implements DataOfferingController {
     }
 
     @Override
+    public ResponseEntity<Flux<DataOfferingDto>> getByTitleAndPriceModelName(String dataOfferingTitle, String pricingModelName, int page, int size) {
+
+            return ResponseEntity.ok(dataOfferingService
+                    .getByDataOfferingTitleAndPricingModelName(dataOfferingTitle, pricingModelName, page,size));
+    }
+
+    @Override
     public ResponseEntity<Mono<ContractParametersResponse>> getContractParameterByOfferingId(final String offeringId) {
         log.info("GET contract parameter by offering Id");
         return ResponseEntity.ok(dataOfferingService.getContractParameterByOfferingId(offeringId));
@@ -124,6 +135,23 @@ public class DataOfferingControllerImp implements DataOfferingController {
     public ResponseEntity<Flux<OfferingIdResponse>> getOfferingListonSharedNetwork(final int page, final int size) {
         log.info("GET an offering list");
         return ResponseEntity.ok(dataOfferingService.getOfferingListonSharedNetwork(page, size));
+    }
+
+    @GetMapping("/getOfferingByActiveAndShareDataWithThirdParty/{active}/{shareDataWithThirdParty}")
+    @Operation(summary = "get Offering on boolean values on active and shared data with third party")
+    public Flux<DataOfferingDto> getByActiveOrShareDataWithThirdParty(@PathVariable(name = "active") boolean active
+            ,@PathVariable(name = "shareDataWithThirdParty") boolean shareDataWithThirdParty){
+        return dataOfferingService.getByActiveAndShareDataWithThirdParty(active, shareDataWithThirdParty);
+    }
+    @GetMapping("/getOfferingBySharedAndTransferableAndFreePrice/{shared}/{transfer}/{freePrice}")
+    @Operation(summary = "get Offering on boolean values on sharedNetworkWithThirdParty and transferable and freePrice ")
+    public Flux<DataOfferingDto> getBySharedNetAndTransferableAndFreePrice(@PathVariable(name = "shared") boolean shared
+            ,@PathVariable(name = "transfer") boolean transfer  ,@PathVariable(name = "freePrice") boolean freePrice){
+        return dataOfferingService.getBySharedNetAndTransferableAndFreePrice(shared,transfer,freePrice);
+    }
+    @DeleteMapping("/deletAllOfferings")
+    public void deleteAllOfferings(){
+        dataOfferingService.deleteAll();
     }
 
 }

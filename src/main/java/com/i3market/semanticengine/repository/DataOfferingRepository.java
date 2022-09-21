@@ -10,4 +10,13 @@ public interface DataOfferingRepository extends ReactiveCrudRepository<DataOffer
 
     Flux<DataOffering> findByCategory(final String category);
 
+    Flux<DataOffering> findByDataOfferingTitleOrHasPricingModelPricingModelName(final String dataOfferingTitle , final String pricingModelName);
+
+    Flux<DataOffering> findByActiveAndContractParametersHasIntendedUseShareDataWithThirdParty
+            (final boolean active , final boolean shareDataWithThirdParty);
+    Flux<DataOffering>
+            findByContractParametersHasIntendedUseShareDataWithThirdPartyAndContractParametersHasLicenseGrantTransferableAndHasPricingModelHasFreePriceHasPriceFree(
+                    final boolean shareDataWithThirdParty, final boolean transferable , final boolean hasFreePrice
+    );
+
 }

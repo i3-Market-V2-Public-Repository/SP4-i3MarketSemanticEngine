@@ -7,8 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.GsonBuilder;
 import com.i3market.semanticengine.common.domain.CategoriesList;
-import com.i3market.semanticengine.common.domain.entity.DataOffering;
-import com.i3market.semanticengine.common.domain.entity.OfferingIdRes;
+import com.i3market.semanticengine.common.domain.entity.*;
 import com.i3market.semanticengine.common.domain.request.*;
 import com.i3market.semanticengine.common.domain.response.*;
 import com.i3market.semanticengine.exception.InvalidInputException;
@@ -334,9 +333,10 @@ public class DataOfferingServiceImpl implements DataOfferingService {
     }
 
     private DataOffering offeringTransform(final DataOffering updateEntity, final DataOffering currentEntity) {
+        System.out.println(updateEntity.getHasDataset().getSpatial());
         return currentEntity.toBuilder()
                 .owner(updateEntity.getOwner())
-                //.providerDid(updateEntity.getProviderDid())
+                .providerDid(updateEntity.getProviderDid())
                 .active(updateEntity.isActive())
                 .ownerConsentForm(updateEntity.getOwnerConsentForm())
                 .inSharedNetwork(updateEntity.isInSharedNetwork())
@@ -350,6 +350,15 @@ public class DataOfferingServiceImpl implements DataOfferingService {
                 .hasPricingModel(updateEntity.getHasPricingModel())
                 .hasDataset(updateEntity.getHasDataset())
                 .build();
+
+    }
+
+
+    public Flux<DataOfferingDto> getByDataOfferingTitleAndPricingModelName(String dataOfferingTitle , String pricingModelName , final int page , final int size){
+      return  dataOfferingRepository.findByDataOfferingTitleOrHasPricingModelPricingModelName(dataOfferingTitle , pricingModelName)
+                .skip(page * size).take(size)
+                .map(e-> mapper.entityToDto(e))
+               .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Sorry no offering found")));
     }
 
     //--------------------Federated Search----------------------
@@ -373,7 +382,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
          String location=null;
         try {
-            location = getLocation(key, address, category).get();
+            location = getLocation(key, "http://95.211.3.250", category).get();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
@@ -526,7 +535,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
        String address =getURi(serverHttpRequest).get();
 
         //  address = getURi(serverHttpRequest).get();
-        SeedsIndex seedsIndex = new SeedsIndex(address + ":8545",
+        SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250"+ ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
         final List<String> locations = getLocations(seedsIndex);
         locations.stream().forEach(e-> System.out.println(e));
@@ -578,7 +587,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         String address =getURi(serverHttpRequest).get();
 
         //  address = getURi(serverHttpRequest).get();
-        SeedsIndex seedsIndex = new SeedsIndex(address + ":8545",
+        SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
         final List<String> locations = getLocations(seedsIndex);
         locations.stream().forEach(e-> System.out.println(e));
@@ -630,7 +639,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         String address =getURi(serverHttpRequest).get();
 
         //  address = getURi(serverHttpRequest).get();
-        SeedsIndex seedsIndex = new SeedsIndex(address + ":8545",
+        SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
         final List<String> locations = getLocations(seedsIndex);
         locations.stream().forEach(e-> System.out.println(e));
@@ -680,7 +689,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         String address =getURi(serverHttpRequest).get();
 
         //  address = getURi(serverHttpRequest).get();
-        SeedsIndex seedsIndex = new SeedsIndex(address + ":8545",
+        SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
         final List<String> locations = getLocations(seedsIndex);
         locations.stream().forEach(e-> System.out.println(e));
@@ -739,7 +748,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             e.printStackTrace();
         }
 
-        SeedsIndex seedsIndex = new SeedsIndex(address + ":8545",
+        SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
         final List<String> locations = getLocations(seedsIndex);
 
@@ -883,6 +892,23 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         System.out.println("Getting local hostString "+serverHttpRequest.getLocalAddress().getHostString());
       return   new AsyncResult<>(String.valueOf(serverHttpRequest.getURI()).substring(0, 19)) ;
 
+    }
+
+    public Flux<DataOfferingDto> getByActiveAndShareDataWithThirdParty(boolean active , boolean shareDataWithThirdParty){
+        return dataOfferingRepository.findByActiveAndContractParametersHasIntendedUseShareDataWithThirdParty(active , shareDataWithThirdParty)
+                .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Sorry no Offering found")))
+                .map(e-> mapper.entityToDto(e));
+    }
+    public Flux<DataOfferingDto> getBySharedNetAndTransferableAndFreePrice(boolean shared , boolean transfer, boolean freePrice){
+        return dataOfferingRepository.
+                findByContractParametersHasIntendedUseShareDataWithThirdPartyAndContractParametersHasLicenseGrantTransferableAndHasPricingModelHasFreePriceHasPriceFree(shared,transfer,freePrice)
+                .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Sorry no Offering found")))
+                .map(e-> mapper.entityToDto(e));
+    }
+
+    public void deleteAll(){
+        System.out.println("delete being called");
+       deleteAllOffering();
     }
 
 

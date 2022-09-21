@@ -39,6 +39,7 @@ public class DistributionDto {
 
     AccessServiceDto accessService;
 
+    ResponseDataExchangeSpec dataExchangeSpec;
     @JsonPOJOBuilder(withPrefix = EMPTY)
     public static class Builder {
 

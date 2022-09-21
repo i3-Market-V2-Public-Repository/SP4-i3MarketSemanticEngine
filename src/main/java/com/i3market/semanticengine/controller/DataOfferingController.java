@@ -66,6 +66,13 @@ public interface DataOfferingController {
     ResponseEntity<Flux<DataOfferingDto>> getOfferingByCategory(@PathVariable(name = "category") final String category,
                                                                 @RequestParam(value = "page", defaultValue = "0") final int page,
                                                                 @RequestParam(value = "size", defaultValue = "5") final int size);
+    @GetMapping("/offering/ByTitleAndPricingModelName/{dataOfferingTitle}/{pricingModelName}")
+    @Operation(summary = "GET a list of offerings by DataOfferingTitle and PricingModelName")
+    ResponseEntity<Flux<DataOfferingDto>> getByTitleAndPriceModelName(@PathVariable(name = "dataOfferingTitle") String dataOfferingTitle ,
+                                                                      @PathVariable(name = "pricingModelName") String pricingModelName,
+                                                                      @RequestParam(value = "page", defaultValue = "0") final int page,
+                                                                      @RequestParam(value = "size", defaultValue = "5") final int size);
+
 
     @GetMapping("/contract-parameter/{offeringId}/offeringId")
     @Operation(summary = "GET a contract parameter by offeringId")

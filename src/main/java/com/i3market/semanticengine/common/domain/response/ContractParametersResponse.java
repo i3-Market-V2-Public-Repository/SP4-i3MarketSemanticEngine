@@ -30,7 +30,12 @@ public class ContractParametersResponse {
     @ToString.Include
     String category;
 
+    String dataOfferingTitle;
+
     ContractParametersDto contractParameters;
+
     PricingModelDto hasPricingModel;
+
+    ResponseDataExchangeSpec dataExchangeSpec;
 
 }

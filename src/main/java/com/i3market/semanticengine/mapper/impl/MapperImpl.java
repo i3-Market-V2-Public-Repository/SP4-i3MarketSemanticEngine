@@ -220,11 +220,11 @@ public class MapperImpl implements Mapper {
                 .description(request.getDescription())
                 .issued(request.getIssued())
                 .modified(request.getModified())
-                .temporal(request.getTemporal())
                 .language(request.getLanguage())
                 .spatial(request.getSpatial())
                 .accrualPeriodicity(request.getAccrualPeriodicity())
                 .temporal(request.getTemporal())
+                .temporalResolution(request.getTemporalResolution())
                 .theme(request.getTheme())
                 .distribution(distributionList)
                 .datasetInformation(datsetInforlationList)
@@ -243,6 +243,7 @@ public class MapperImpl implements Mapper {
                 .packageFormat(request.getPackageFormat())
                 .dataStream(request.isDataStream())
                 .accessService(requestToEntity(request.getAccessService()))
+                .dataExchangeSpec(requestToEntity(request.getDataExchangeSpec()))
                 .build();
     }
 
@@ -253,6 +254,18 @@ public class MapperImpl implements Mapper {
                 .endpointURL(request.getEndpointURL())
                 .servesDataset(request.getServesDataset())
                 .serviceSpecs(request.getServiceSpecs())
+                .build();
+    }
+    private DataExchangeSpec requestToEntity(final RequestDataExchangeSpec requestDataExchangeSpec){
+        return DataExchangeSpec.builder()
+                .encAlg(requestDataExchangeSpec.getEncAlg())
+                .signingAlg(requestDataExchangeSpec.getSigningAlg())
+                .hashAlg(requestDataExchangeSpec.getHashAlg())
+                .ledgerContractAddress(requestDataExchangeSpec.getLedgerContractAddress())
+                .ledgerSignerAddress(requestDataExchangeSpec.getLedgerSignerAddress())
+                .pooToPorDelay(requestDataExchangeSpec.getPooToPorDelay())
+                .pooToPopDelay(requestDataExchangeSpec.getPooToPopDelay())
+                .pooToSecretDelay(requestDataExchangeSpec.getPooToSecretDelay())
                 .build();
     }
 
@@ -404,6 +417,7 @@ public class MapperImpl implements Mapper {
                 .language(entity.getLanguage())
                 .spatial(entity.getSpatial())
                 .accrualPeriodicity(entity.getAccrualPeriodicity())
+                .temporalResolution(entity.getTemporalResolution())
                 .temporal(entity.getTemporal())
                 .theme(entity.getTheme())
                 .distribution(distributionList)
@@ -423,6 +437,7 @@ public class MapperImpl implements Mapper {
                 .packageFormat(entity.getPackageFormat())
                 .dataStream(entity.isDataStream())
                 .accessService(entityToDto(entity.getAccessService()))
+                .dataExchangeSpec(entityToDto(entity.getDataExchangeSpec()))
                 .build();
     }
 
@@ -436,6 +451,18 @@ public class MapperImpl implements Mapper {
                 .build();
     }
 
+    private ResponseDataExchangeSpec entityToDto(final DataExchangeSpec responseDataExchangeSpec){
+        return ResponseDataExchangeSpec.builder()
+                .encAlg(responseDataExchangeSpec.getEncAlg())
+                .signingAlg(responseDataExchangeSpec.getSigningAlg())
+                .hashAlg(responseDataExchangeSpec.getHashAlg())
+                .ledgerContractAddress(responseDataExchangeSpec.getLedgerContractAddress())
+                .ledgerSignerAddress(responseDataExchangeSpec.getLedgerSignerAddress())
+                .pooToPorDelay(responseDataExchangeSpec.getPooToPorDelay())
+                .pooToPopDelay(responseDataExchangeSpec.getPooToPopDelay())
+                .pooToSecretDelay(responseDataExchangeSpec.getPooToSecretDelay())
+                .build();
+    }
     private DatasetInformationDto entityToDto(final DatasetInformation entity) {
         return DatasetInformationDto.builder()
                 .measurementType(entity.getMeasurementType())
@@ -482,8 +509,10 @@ public class MapperImpl implements Mapper {
                 .dataStream(entity.getHasDataset().getDistribution().get(0).isDataStream())
                 .personalData(entity.isPersonalData())
                 .category(entity.getCategory())
+                .dataOfferingTitle(entity.getDataOfferingTitle())
                 .contractParameters(entityToDto(entity.getContractParameters()))
                 .hasPricingModel(entityToDto(entity.getHasPricingModel()))
+                .dataExchangeSpec(entityToDto(entity.getHasDataset().getDistribution().get(0).getDataExchangeSpec()))
                 .build();
     }
 
@@ -599,7 +628,7 @@ public class MapperImpl implements Mapper {
                 .language(dto.getLanguage())
                 .spatial(dto.getSpatial())
                 .accrualPeriodicity(dto.getAccrualPeriodicity())
-                .temporal(dto.getTemporal())
+                .temporalResolution(dto.getTemporalResolution())
                 .theme(dto.getTheme())
                 .distribution(distributionList)
                 .datasetInformation(datsetInforlationList)

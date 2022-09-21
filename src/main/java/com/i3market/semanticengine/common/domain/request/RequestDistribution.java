@@ -78,4 +78,6 @@ public class RequestDistribution {
     boolean dataStream=false;
 
     RequestAccessService accessService;
+
+    RequestDataExchangeSpec dataExchangeSpec;
 }

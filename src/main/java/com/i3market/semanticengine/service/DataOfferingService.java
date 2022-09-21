@@ -32,6 +32,8 @@ public interface DataOfferingService {
 
     Flux<DataOfferingDto> getOfferingByCategory(final String category, final int page, final int size);
 
+    Flux<DataOfferingDto> getByDataOfferingTitleAndPricingModelName(String dataOfferingTitle , String pricingModelName , final int page , final int size);
+
     Mono<ContractParametersResponse> getContractParameterByOfferingId(final String offeringId);
 
     Flux<ProviderIdResponse> getProviderListByCategory(String category, int page, int size);
@@ -41,6 +43,9 @@ public interface DataOfferingService {
 
     Mono<Void> deleteDataOfferingById(final String offeringId);
 
+     void deleteAll();
+    Flux<DataOfferingDto> getByActiveAndShareDataWithThirdParty(boolean active , boolean shareDataWithThirdParty);
+    Flux<DataOfferingDto> getBySharedNetAndTransferableAndFreePrice(boolean shared , boolean transfer, boolean freePrice);
     String getOfferingTemplate();
    // Flux<DataOfferingDto> gettingfromAnotherNodeByCategory(String category , ServerHttpRequest serverHttpRequest ) ;
 }
