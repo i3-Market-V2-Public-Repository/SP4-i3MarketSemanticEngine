@@ -34,5 +34,5 @@ public class RequestAccessService {
     String servesDataset = "require";
 
     @lombok.Builder.Default
-    String serviceSpecs = "require";
+    private String serviceSpecs = "require";
 }

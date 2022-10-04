@@ -66,13 +66,59 @@ A sample of a data offering can be found [here](https://gitlab.com/i3-market/cod
 
 >```GET/api/registration/offering-list```
 
-- Get a list of data offering by data profiderId:
+- Get a list of data offering by data providerId:
 
 >```GET/api/registration/offering/{id}/providerId```
 
 - Get a list of data offering by data offeringId:
 
 >```GET/api/registration/offering/{id}/offeringId```
+
+- Get a list of active offering by category 
+
+>```/ActiveOfferingByCategory/{category}``
+
+- Get a list of active offering by provider 
+
+>````/ActiveOfferingByProvider/{id}/providerId```
+
+
+- Get a list of Offerings searched via text/keyword
+
+>```/textSearch/text/{text}``
+
+- Get a list of offerings on shared network
+
+>```/offerings-list/on-SharedNetwork``
+
+- Get a list of all active offerings
+
+>```/offerings-list/on-active``
+
+- Get a list of offerings by category in network
+
+>```/federated-offering/{category}``
+
+- Get a list of offerings in a network
+
+>```/federated-offerings-list``
+
+- Get active offerings in a network
+
+>```/federated-offerings-list/on-Active``
+
+- Get offering list in a network 
+
+>```/federated-offering/{id}/offeringId``
+
+-Get offering list by Provider in a network
+
+>```/federated-offering/{id}/providerId``
+
+
+- Get a list of offerings via text search in a network
+
+>```/federated-offering/textSearch/text/{text}``
 
 - Get a list of data offering by category. This API will getch data from all node, e.g. in this case where have four nodes 244, 249, 250, and 251:
 
@@ -105,8 +151,8 @@ A sample of a data offering can be found [here](https://gitlab.com/i3-market/cod
 Achille: <achille.zappa@insight-centre.org>
 
 or
-
-Chi : <chi-hung.le@insight-centre.org>
+ 
+Mirza: <mirza.fardeenbaig@insight-centre.org>
 
 ## 6. License
 

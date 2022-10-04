@@ -47,5 +47,8 @@ public interface DataOfferingService {
     Flux<DataOfferingDto> getByActiveAndShareDataWithThirdParty(boolean active , boolean shareDataWithThirdParty);
     Flux<DataOfferingDto> getBySharedNetAndTransferableAndFreePrice(boolean shared , boolean transfer, boolean freePrice);
     String getOfferingTemplate();
-   // Flux<DataOfferingDto> gettingfromAnotherNodeByCategory(String category , ServerHttpRequest serverHttpRequest ) ;
+
+    Flux<DataOfferingDto> getOfferingsByActiveAndCategory(final String category , final int page, final int size);
+
+    Flux<DataOfferingDto> getOfferingsByActiveAndProvider(final String provider , final int page, final int size);
 }

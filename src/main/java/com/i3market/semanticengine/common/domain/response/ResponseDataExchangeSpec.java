@@ -1,22 +1,35 @@
 package com.i3market.semanticengine.common.domain.response;
 
-import lombok.AllArgsConstructor;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.Value;
 
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+
+
+
+@Value
+@Builder(builderClassName = "Builder", toBuilder = true)
+@JsonDeserialize(builder = ResponseDataExchangeSpec.Builder.class)
+@ToString(onlyExplicitlyIncluded = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ResponseDataExchangeSpec {
-    private String encAlg;
-    private String signingAlg;
-    private String hashAlg;
-    private String ledgerContractAddress;
-    private String ledgerSignerAddress;
-    private int pooToPorDelay;
-    private int pooToPopDelay;
-    private int pooToSecretDelay;
+     String encAlg;
+     String signingAlg;
+     String hashAlg;
+     String ledgerContractAddress;
+     String ledgerSignerAddress;
+     int pooToPorDelay;
+     int pooToPopDelay;
+     int pooToSecretDelay;
 
+
+    @JsonPOJOBuilder(withPrefix = EMPTY)
+    public static class Builder {
+
+    }
 }

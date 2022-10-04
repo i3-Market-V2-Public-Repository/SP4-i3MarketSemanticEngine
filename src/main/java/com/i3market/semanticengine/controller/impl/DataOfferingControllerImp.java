@@ -154,4 +154,13 @@ public class DataOfferingControllerImp implements DataOfferingController {
         dataOfferingService.deleteAll();
     }
 
+    @Override
+    public ResponseEntity<Flux<DataOfferingDto>> getActiveOfferingByCategory(String category, int page, int size) {
+       return ResponseEntity.ok(dataOfferingService.getOfferingsByActiveAndCategory(category,page,size));
+    }
+
+    @Override
+    public ResponseEntity<Flux<DataOfferingDto>> getActiveOfferingByProvider(String provider, int page, int size) {
+        return ResponseEntity.ok(dataOfferingService.getOfferingsByActiveAndProvider(provider,page,size));
+    }
 }

@@ -1,16 +1,15 @@
 package com.i3market.semanticengine.common.domain.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.io.Serializable;
 
 @Data
-@Builder
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+@ToString(onlyExplicitlyIncluded = true)
 public class DataExchangeSpec implements Serializable {
     private String encAlg;
     private String signingAlg;

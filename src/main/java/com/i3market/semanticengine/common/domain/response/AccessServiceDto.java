@@ -30,7 +30,7 @@ public class AccessServiceDto {
 
     String servesDataset;
 
-    String serviceSpecs;
+    private String serviceSpecs;
 
     @JsonPOJOBuilder(withPrefix = EMPTY)
     public static class Builder {

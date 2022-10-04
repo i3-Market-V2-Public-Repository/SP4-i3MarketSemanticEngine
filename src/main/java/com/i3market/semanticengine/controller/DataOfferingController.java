@@ -114,4 +114,17 @@ public interface DataOfferingController {
     @Operation(summary = "Get Offering/Offerings based on keyword/text")
     Flux<DataOfferingDto> getTextSearchMono(@PathVariable(name = "text") String text, @RequestParam(value = "page", defaultValue = "0") final int page,
                                                    @RequestParam(value = "size", defaultValue = "5") final int size);
+
+
+    @GetMapping("/ActiveOfferingByCategory/{category}")
+    @Operation(summary = "GET a list of offerings by category")
+    ResponseEntity<Flux<DataOfferingDto>> getActiveOfferingByCategory(@PathVariable(name = "category") final String category,
+                                                                @RequestParam(value = "page", defaultValue = "0") final int page,
+                                                                @RequestParam(value = "size", defaultValue = "5") final int size);
+
+    @GetMapping("/ActiveOfferingByProvider/{id}/providerId")
+    @Operation(summary = "GET an a list of offering for a provider")
+    ResponseEntity<Flux<DataOfferingDto>> getActiveOfferingByProvider(@PathVariable(name = "id") final String provider,
+                                                                @RequestParam(value = "page", defaultValue = "0") final int page,
+                                                                @RequestParam(value = "size", defaultValue = "5") final int size);
 }

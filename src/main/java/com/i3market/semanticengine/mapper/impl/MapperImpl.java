@@ -205,6 +205,7 @@ public class MapperImpl implements Mapper {
     }
 
     private Dataset requestToEntity(final RequestDataset request) {
+
         final var distributionList = request.getDistribution()
                 .parallelStream().map(this::requestToEntity)
                 .collect(Collectors.toList());
@@ -232,6 +233,7 @@ public class MapperImpl implements Mapper {
     }
 
     private Distribution requestToEntity(final RequestDistribution request) {
+
         return Distribution.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -398,6 +400,7 @@ public class MapperImpl implements Mapper {
 
     private DatasetDto entityToDto(final Dataset entity) {
 
+
         final var distributionList = entity.getDistribution()
                 .parallelStream().map(this::entityToDto)
                 .collect(Collectors.toList());
@@ -426,6 +429,7 @@ public class MapperImpl implements Mapper {
     }
 
     private DistributionDto entityToDto(final Distribution entity) {
+
         return DistributionDto.builder()
                 .title(entity.getTitle())
                 .description(entity.getDescription())
@@ -442,6 +446,7 @@ public class MapperImpl implements Mapper {
     }
 
     private AccessServiceDto entityToDto(final AccessService entity) {
+
         return AccessServiceDto.builder()
                 .conformsTo(entity.getConformsTo())
                 .endpointDescription(entity.getEndpointDescription())
@@ -452,7 +457,8 @@ public class MapperImpl implements Mapper {
     }
 
     private ResponseDataExchangeSpec entityToDto(final DataExchangeSpec responseDataExchangeSpec){
-        return ResponseDataExchangeSpec.builder()
+
+       return ResponseDataExchangeSpec.builder()
                 .encAlg(responseDataExchangeSpec.getEncAlg())
                 .signingAlg(responseDataExchangeSpec.getSigningAlg())
                 .hashAlg(responseDataExchangeSpec.getHashAlg())
@@ -462,6 +468,7 @@ public class MapperImpl implements Mapper {
                 .pooToPopDelay(responseDataExchangeSpec.getPooToPopDelay())
                 .pooToSecretDelay(responseDataExchangeSpec.getPooToSecretDelay())
                 .build();
+
     }
     private DatasetInformationDto entityToDto(final DatasetInformation entity) {
         return DatasetInformationDto.builder()
@@ -479,9 +486,11 @@ public class MapperImpl implements Mapper {
 
     @Override
     public DataOffering dtoToEntity(final DataOfferingDto dto) {
-        return DataOffering.builder()
+
+
+        final DataOffering build = DataOffering.builder()
                 .owner(dto.getOwner())
-                //.providerDid(dto.getProviderDid())
+                .providerDid(dto.getProviderDid())
                 .active(dto.isActive())
                 .ownerConsentForm(dto.getOwnerConsentForm())
                 .inSharedNetwork(dto.isInSharedNetwork())
@@ -496,6 +505,9 @@ public class MapperImpl implements Mapper {
                 .hasPricingModel(requestToEntity(dto.getHasPricingModel()))
                 .hasDataset(requestToEntity(dto.getHasDataset()))
                 .build();
+
+        return build;
+
     }
 
     @Override
@@ -646,6 +658,7 @@ public class MapperImpl implements Mapper {
                 .mediaType(dto.getMediaType())
                 .packageFormat(dto.getPackageFormat())
                 .accessService(requestToEntity(dto.getAccessService()))
+                .dataExchangeSpec(requestToEntity(dto.getDataExchangeSpec()))
                 .build();
     }
 
@@ -656,6 +669,18 @@ public class MapperImpl implements Mapper {
                 .endpointURL(dto.getEndpointURL())
                 .servesDataset(dto.getServesDataset())
                 .serviceSpecs(dto.getServiceSpecs())
+                .build();
+    }
+    private DataExchangeSpec requestToEntity(final ResponseDataExchangeSpec dataExchangeSpec){
+       return DataExchangeSpec.builder()
+                .encAlg(dataExchangeSpec.getEncAlg())
+                .signingAlg(dataExchangeSpec.getSigningAlg())
+                .hashAlg(dataExchangeSpec.getHashAlg())
+                .ledgerContractAddress(dataExchangeSpec.getLedgerContractAddress())
+                .ledgerSignerAddress(dataExchangeSpec.getLedgerSignerAddress())
+                .pooToPorDelay(dataExchangeSpec.getPooToPorDelay())
+                .pooToPopDelay(dataExchangeSpec.getPooToPopDelay())
+                .pooToSecretDelay(dataExchangeSpec.getPooToSecretDelay())
                 .build();
     }
 

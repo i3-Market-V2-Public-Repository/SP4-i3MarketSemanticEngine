@@ -25,9 +25,9 @@ api:
     externalDocDesc: https://www.i3-market.eu/
     externalDocUrl: https://www.i3-market.eu/
     contact:
-      name: Chi-Hung Le
+      name: Mirza
       url:
-      email: lchhung@gmail.com
+      email: mirza.fardeenbaig@insight-centre.org
 
   responseCodes:
     ok.description: OK

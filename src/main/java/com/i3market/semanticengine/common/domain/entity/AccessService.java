@@ -20,6 +20,6 @@ public class AccessService implements Serializable {
 
     String servesDataset;
 
-    String serviceSpecs;
+    private String serviceSpecs;
 
 }

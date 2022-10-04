@@ -43,6 +43,7 @@ public class FederatedController {
 
 
     }
+
     @PostMapping("/federated-category/{category}/{key}")
     public ResponseEntity<Mono<Void>> postingCategory(@PathVariable(name = "category") String category
             , @PathVariable(name = "key") String key , ServerHttpRequest serverHttpRequest){
@@ -103,11 +104,18 @@ public class FederatedController {
       return  dataOfferingService.gettingFederatedOffering(id , serverHttpRequest);
     }
 
-//    @GetMapping("/textSearch/text/{text}")
-//    public Flux<DataOfferingDto> getTextSearchMono(@PathVariable(name = "text") String text, @RequestParam(value = "page", defaultValue = "0") final int page,
-//                                                   @RequestParam(value = "size", defaultValue = "5") final int size){
-//        return textSearchClass.getTextSearchReact(text,page,size);
-//    }
+
+    @GetMapping("/federated-offering/{id}/providerId")
+    public List<DataOfferingDto> getOfferingbyProvider(@PathVariable(name = "id") String id , ServerHttpRequest  serverHttpRequest){
+        try {
+            return  dataOfferingService.gettingFedListOfOfferingByProvider(serverHttpRequest,id);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return  null;
+    }
     @GetMapping("/getRegisteredCategories/{key}")
     public Flux<CategoriesList> getRegisteredCategories( ServerHttpRequest serverHttpRequest , @PathVariable(name = "key") String key){
       return Flux.fromIterable(dataOfferingService.getRegisteredCategories(serverHttpRequest , key))
@@ -125,9 +133,30 @@ public class FederatedController {
         }
         return  null;
     }
-//    @GetMapping("/getOfferingByActiveAndShareDataWithThirdParty/{active}/{shareDataWithThirdParty}")
-//    public Flux<DataOfferingDto> getByActiveOrShareDataWithThirdParty(@PathVariable(name = "active") boolean active
-//            ,@PathVariable(name = "shareDataWithThirdParty") boolean shareDataWithThirdParty){
-//       return dataOfferingService.getByActiveAndShareDataWithThirdParty(active, shareDataWithThirdParty);
-//    }
+
+    @GetMapping("/federated-activeOffering/{category}")
+    public Flux<DataOfferingDto> getActiveOfferingByCategory(@PathVariable(name = "category") String category , ServerHttpRequest serverHttpRequest )  {
+
+        try {
+            return dataOfferingService.gettingFedListOfActiveOfferingByCategory(  serverHttpRequest, category);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+       return null;
+
+    }
+    @GetMapping("/federated-activeOffering/{id}/providerId")
+    public Flux<DataOfferingDto> getActiveOfferingByProvider(@PathVariable(name = "id") String id , ServerHttpRequest  serverHttpRequest){
+        try {
+            return  dataOfferingService.gettingFedListOfActiveOfferingByProvider(serverHttpRequest,id);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return  null;
+    }
 }
