@@ -62,9 +62,29 @@ public class DataOfferingServiceImpl implements DataOfferingService {
     @Override
     public Flux<CategoriesList> getCategoryList(ServerHttpRequest serverHttpRequest) {
 
-        return webClient.build().get().uri(categoryListUrl).retrieve()
-                .bodyToFlux(CategoriesList.class)
-                .log(log.getName(), Level.FINE);
+//        return webClient.build().get().uri(categoryListUrl).retrieve()
+//                .bodyToFlux(CategoriesList.class)
+//                .log(log.getName(), Level.FINE);
+
+        SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.251:8545",
+                "0xdc46ccc4e79eb75c3eaeb2419e5582f7d86f0212a459886be787e00ca1edb4ae");
+        ArrayList<CategoriesList> categoriesLists = new ArrayList<>();
+        try{
+            seedsIndex.init();
+            final Collection<SearchEngineIndexRecord> byDataCategory = seedsIndex.findByDataCategory(null);
+            final Iterator<SearchEngineIndexRecord> iterator = byDataCategory.iterator();
+            while(iterator.hasNext()){
+                Arrays.stream(iterator.next().getCategories()).forEach(e-> categoriesLists
+                        .add(new CategoriesList((e.name().substring(0,1) + e.name().substring(1).toLowerCase()),e.description())));
+            }
+           return Flux.fromIterable(categoriesLists);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        finally {
+            seedsIndex.shutdown();
+        }
+        return null;
     }
 
     @Override
@@ -389,33 +409,86 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
     public Flux<DataOfferingDto> gettingfromAnotherNodeByCategory(String category , ServerHttpRequest serverHttpRequest  )   {
 
-        String address = null;
-        String key = "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26";
-        System.out.println("Value of address  " + address);
-        try {
-            address = getURi(serverHttpRequest).get();
-            System.out.println("address value in try and catch block   " +address);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
+//        String address = null;
+//        String key = "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26";
+//        System.out.println("Value of address  " + address);
+//        try {
+//            address = getURi(serverHttpRequest).get();
+//            System.out.println("address value in try and catch block   " +address);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        } catch (ExecutionException e) {
+//            e.printStackTrace();
+//        }
+//
+//         String location=null;
+//        try {
+//            location = getLocation(key, "http://95.211.3.250", category).get();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        } catch (ExecutionException e) {
+//            e.printStackTrace();
+//        }
+//
+//        System.out.println("Getting Value of Location " + location);
+//
+//        System.out.println();
+//        return webClient.build().get().uri(location+"8082/api/registration/offering/"+category.toLowerCase()).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .log(log.getName(), Level.FINE);
+
+//        String address =getURi(serverHttpRequest).get();
+
+        //  address = getURi(serverHttpRequest).get();
+        SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
+                "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+        final List<String> locations = getLocations(seedsIndex);
+        locations.stream().forEach(e-> System.out.println(e));
+        Set<String> loca = new HashSet<>(locations);
+
+
+        loca.stream().forEach(e-> System.out.println(e));
+
+
+        locations.stream().map(e-> e.substring(0,19))
+                .forEach(e-> System.out.println(e));
+        System.out.println(locations.get(0).substring(0, 19));
+        // final Flux<OfferingIdResponse> offeringIdResponseFlux = webClient.build().get().uri("http://95.211.3.250:8082/api/registration/offerings-list").retrieve().bodyToFlux(OfferingIdResponse.class);
+
+        OkHttpClient client = new OkHttpClient();
+
+        List<DataOfferingDto> ArrList = new ArrayList<>();
+
+        System.out.println("Value of size "+ locations.size());
+        for(int i=0; i<locations.size();i++){
+            System.out.println("Value of i ="+i);
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/offering/"+category).build();
+
+            ObjectMapper obj = new ObjectMapper();
+            String val;
+            try {
+                final Response execute = client.newCall(request).execute();
+                if(execute.code()!=404){
+                    val =execute.body().string();
+//                    System.out.println("Val : '\n"+ val);
+                    obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+                    obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES,true);
+                    obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE,true);
+                    obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                    obj.registerModule( new JavaTimeModule());
+                    final List<DataOfferingDto> o= obj.readValue(val, obj.getTypeFactory().constructParametricType(List.class, DataOfferingDto.class));
+                    System.out.println("After  List");
+                    o.stream().forEach(e-> ArrList.add(e));
+                    o.stream().forEach(e-> System.out.println(e.toString()));
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
         }
 
-         String location=null;
-        try {
-            location = getLocation(key, "http://95.211.3.250", category).get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
-
-        System.out.println("Getting Value of Location " + location);
-
-        System.out.println();
-        return webClient.build().get().uri(location+"8082/api/registration/offering/"+category.toLowerCase()).retrieve()
-                .bodyToFlux(DataOfferingDto.class)
-                .log(log.getName(), Level.FINE);
+        return Flux.fromIterable(ArrList).switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Sorry no offering found with "+category+ " category")));
 
     }
 

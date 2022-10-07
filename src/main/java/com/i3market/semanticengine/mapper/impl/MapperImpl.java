@@ -487,7 +487,7 @@ public class MapperImpl implements Mapper {
     @Override
     public DataOffering dtoToEntity(final DataOfferingDto dto) {
 
-
+        System.out.println(dto.getOwner());
         final DataOffering build = DataOffering.builder()
                 .owner(dto.getOwner())
                 .providerDid(dto.getProviderDid())
