@@ -10,7 +10,6 @@ import lombok.Value;
 @Builder(builderClassName = "Builder", toBuilder = true)
 @JsonDeserialize(builder = ProviderIdResponse.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@ToString(onlyExplicitlyIncluded = true)
 public class ProviderIdResponse {
 
     String provider;

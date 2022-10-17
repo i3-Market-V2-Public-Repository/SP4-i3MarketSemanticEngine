@@ -77,7 +77,9 @@ public class DataOfferingServiceImpl implements DataOfferingService {
                 Arrays.stream(iterator.next().getCategories()).forEach(e-> categoriesLists
                         .add(new CategoriesList((e.name().substring(0,1) + e.name().substring(1).toLowerCase()),e.description())));
             }
-           return Flux.fromIterable(categoriesLists);
+            categoriesLists.sort(comparingCategoriesList);
+
+            return Flux.fromIterable(categoriesLists);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -677,6 +679,64 @@ public class DataOfferingServiceImpl implements DataOfferingService {
     }
 
 
+    public List<ProviderIdResponse> gettingListOfProviders(  ServerHttpRequest  serverHttpRequest) throws ExecutionException, InterruptedException {
+        String address =getURi(serverHttpRequest).get();
+
+        //  address = getURi(serverHttpRequest).get();
+        SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250"+ ":8545",
+                "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+        final List<String> locations = getLocations(seedsIndex);
+        locations.stream().forEach(e-> System.out.println(e));
+        Set<String> loca = new HashSet<>(locations);
+
+
+        loca.stream().forEach(e-> System.out.println(e));
+
+
+        locations.stream().map(e-> e.substring(0,19))
+                .forEach(e-> System.out.println(e));
+        System.out.println(locations.get(0).substring(0, 19));
+        // final Flux<OfferingIdResponse> offeringIdResponseFlux = webClient.build().get().uri("http://95.211.3.250:8082/api/registration/offerings-list").retrieve().bodyToFlux(OfferingIdResponse.class);
+
+        OkHttpClient client = new OkHttpClient();
+
+        List<ProviderIdResponse> ArrList = new ArrayList<>();
+
+        System.out.println("Value of size "+ locations.size());
+        for(int i=0; i<locations.size();i++){
+            System.out.println("Value of i ="+i);
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/providers-list").build();
+
+            ObjectMapper obj = new ObjectMapper();
+            String val;
+            try {
+                final Response execute = client.newCall(request).execute();
+                if(execute.code()!=404){
+                    val =execute.body().string();
+                    System.out.println( val);
+                    obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+                    obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES,true);
+                    obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE,true);
+                    obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+//                final List<ProviderIdResponse> o = obj.readValue(val, obj.getTypeFactory().constructParametricType(List.class, ProviderIdResponse.class));
+//                System.out.println("After  List");
+//                o.stream().forEach(e-> ArrList.add(e));
+//                o.stream().forEach(e-> System.out.println(e.getProvider()));
+                    GsonBuilder gsonBuilder = new GsonBuilder();
+                    final ProviderIdResponse[] providerIdResponses = gsonBuilder.create().fromJson(val, ProviderIdResponse[].class);
+                  Arrays.stream(providerIdResponses).forEach(e-> ArrList.add(e));
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        return ArrList;
+    }
+
+
     public List<OfferingIdRes> gettingFedListOfOfferingOnSharedNetwork(  ServerHttpRequest  serverHttpRequest) throws ExecutionException, InterruptedException {
         String address =getURi(serverHttpRequest).get();
 
@@ -832,7 +892,8 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         return ArrList;
     }
 
-    public List<DataOfferingDto> gettingFedListOfOfferingByProvider(  ServerHttpRequest  serverHttpRequest , String text) throws ExecutionException, InterruptedException {
+
+    public List<DataOfferingDto> gettingFedListofActiveOfOfferingTextSearch(  ServerHttpRequest  serverHttpRequest , String text) throws ExecutionException, InterruptedException {
         String address =getURi(serverHttpRequest).get();
 
         //  address = getURi(serverHttpRequest).get();
@@ -858,7 +919,63 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         System.out.println("Value of size "+ locations.size());
         for(int i=0; i<locations.size();i++){
             System.out.println("Value of i ="+i);
-            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/offering/"+text+"/providerId").build();
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)
+                    +":8082/api/registration/getActiveOfferingByText/"+text +"/text").build();
+
+            ObjectMapper obj = new ObjectMapper();
+            String val;
+            try {
+                final Response execute = client.newCall(request).execute();
+                if(execute.code()!=404){
+                    val =execute.body().string();
+//                    System.out.println("Val : '\n"+ val);
+                    obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+                    obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES,true);
+                    obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE,true);
+                    obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                    obj.registerModule( new JavaTimeModule());
+                    final List<DataOfferingDto> o= obj.readValue(val, obj.getTypeFactory().constructParametricType(List.class, DataOfferingDto.class));
+                    System.out.println("After  List");
+                    o.stream().forEach(e-> ArrList.add(e));
+                    o.stream().forEach(e-> System.out.println(e.toString()));
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        return ArrList;
+    }
+
+    public List<DataOfferingDto> gettingFedListOfOfferingByProvider(  ServerHttpRequest  serverHttpRequest , String id) throws ExecutionException, InterruptedException {
+        String address =getURi(serverHttpRequest).get();
+
+        //  address = getURi(serverHttpRequest).get();
+        SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
+                "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+        final List<String> locations = getLocations(seedsIndex);
+        locations.stream().forEach(e-> System.out.println(e));
+        Set<String> loca = new HashSet<>(locations);
+
+
+        loca.stream().forEach(e-> System.out.println(e));
+
+
+        locations.stream().map(e-> e.substring(0,19))
+                .forEach(e-> System.out.println(e));
+        System.out.println(locations.get(0).substring(0, 19));
+        // final Flux<OfferingIdResponse> offeringIdResponseFlux = webClient.build().get().uri("http://95.211.3.250:8082/api/registration/offerings-list").retrieve().bodyToFlux(OfferingIdResponse.class);
+
+        OkHttpClient client = new OkHttpClient();
+
+        List<DataOfferingDto> ArrList = new ArrayList<>();
+
+        System.out.println("Value of size "+ locations.size());
+        for(int i=0; i<locations.size();i++){
+            System.out.println("Value of i ="+i);
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/offering/"+id+"/providerId").build();
 
             ObjectMapper obj = new ObjectMapper();
             String val;
@@ -1034,13 +1151,15 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
     @Async("asyncExecutor")
     public Future<String> getURi(ServerHttpRequest  serverHttpRequest){
-
-        System.out.println("Getting URI "+serverHttpRequest.getURI());
-        System.out.println("Getting remote hostString "+serverHttpRequest.getRemoteAddress().getHostString());
-        System.out.println("Getting path with application  "+serverHttpRequest.getPath().pathWithinApplication().value());
-        System.out.println("Getting remote hostName "+serverHttpRequest.getRemoteAddress().getAddress().getHostName());
-        System.out.println("Getting local hostString "+serverHttpRequest.getLocalAddress().getHostString());
-      return   new AsyncResult<>(String.valueOf(serverHttpRequest.getURI()).substring(0, 19)) ;
+        if(serverHttpRequest!=null){
+            System.out.println("Getting URI "+serverHttpRequest.getURI());
+            System.out.println("Getting remote hostString "+serverHttpRequest.getRemoteAddress().getHostString());
+            System.out.println("Getting path with application  "+serverHttpRequest.getPath().pathWithinApplication().value());
+            System.out.println("Getting remote hostName "+serverHttpRequest.getRemoteAddress().getAddress().getHostName());
+            System.out.println("Getting local hostString "+serverHttpRequest.getLocalAddress().getHostString());
+            return   new AsyncResult<>(String.valueOf(serverHttpRequest.getURI()).substring(0, 19)) ;
+        }
+        return null;
 
     }
 
@@ -1174,12 +1293,13 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
        return Flux.fromIterable(ArrList)
                 .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND,"Sorry no provider with name "+provider + " is actively found")));
-//        return ArrList;
+
     }
 
         //----------------------------------------------------------
 
 
+    final Comparator<CategoriesList> comparingCategoriesList = Comparator.comparing(e-> e.getName());
     final Comparator<DataOfferingDto> compareOfferingTime = Comparator.comparing(DataOfferingDto::getCreatedAt);
     final Comparator<DataOfferingDto> compareOfferingTitle = Comparator.comparing(DataOfferingDto::getDataOfferingTitle);
     final Comparator<DataOfferingDto> compareByProvider = Comparator.comparing(DataOfferingDto::getProvider);

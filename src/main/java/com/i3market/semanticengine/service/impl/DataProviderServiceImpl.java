@@ -1,5 +1,6 @@
 package com.i3market.semanticengine.service.impl;
 
+import com.i3market.semanticengine.common.domain.entity.DataOffering;
 import com.i3market.semanticengine.common.domain.entity.DataProvider;
 import com.i3market.semanticengine.common.domain.request.RequestDataProvider;
 import com.i3market.semanticengine.common.domain.response.DataProviderDto;
@@ -17,12 +18,17 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 
@@ -98,10 +104,15 @@ public class DataProviderServiceImpl implements DataProviderService {
 
     @Override
     public Flux<ProviderIdResponse> providerList(final int page, final int size) {
-        return providerRepository.findAll()
+
+        final Flux<ProviderIdResponse> providerRepo = providerRepository.findAll()
                 .log(log.getName(), Level.FINE)
                 .skip(page * size).take(size)
-                .map(e -> ProviderIdResponse.builder().provider(e.getProviderId()).build());
+                .map(e -> ProviderIdResponse.builder().provider(e.getProviderId()).build())
+                .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Sorry! there is no provider found")));
+        return providerRepo;
+
+
     }
 
     private DataProvider providerTransform(final DataProvider updateEntity, final DataProvider currentEntity) {

@@ -4,6 +4,7 @@ package com.i3market.semanticengine.controller.impl;
 import com.i3market.semanticengine.common.domain.CategoriesList;
 import com.i3market.semanticengine.common.domain.entity.OfferingIdRes;
 import com.i3market.semanticengine.common.domain.response.DataOfferingDto;
+import com.i3market.semanticengine.common.domain.response.ProviderIdResponse;
 import com.i3market.semanticengine.exception.NotFoundException;
 import com.i3market.semanticengine.service.impl.DataOfferingServiceImpl;
 import com.i3market.semanticengine.service.impl.TextSearchClass;
@@ -64,9 +65,20 @@ public class FederatedController {
     }
    // @CrossOrigin(origins = "http://localhost:4200")
     @GetMapping("/federated-offerings-list")
-    public ResponseEntity<List<OfferingIdRes>> getList( ServerHttpRequest  serverHttpRequest){
+    public ResponseEntity<List<OfferingIdRes>> getOfferingList( ServerHttpRequest  serverHttpRequest){
         try {
             return ResponseEntity.ok(dataOfferingService.gettingListOfOffering(serverHttpRequest));
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    @GetMapping("/federated-providers-list")
+    public ResponseEntity<List<ProviderIdResponse>> getProviderList(ServerHttpRequest  serverHttpRequest){
+        try {
+            return ResponseEntity.ok(dataOfferingService.gettingListOfProviders(serverHttpRequest));
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -122,8 +134,19 @@ public class FederatedController {
               .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Sorry! no registered categories found")));
     }
 
-    @GetMapping("/federated-offering/textSearch/text/{text}")
+    @GetMapping("/federated-offering/getActiveOfferingByText/{text}/text")
     public List<DataOfferingDto> getOfferingTextSearch(@PathVariable(name = "text") String text ,  ServerHttpRequest  serverHttpRequest)  {
+        try {
+            return  dataOfferingService.gettingFedListofActiveOfOfferingTextSearch(serverHttpRequest,text);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return  null;
+    }
+    @GetMapping("/federated-offering/textSearch/text/{text}")
+    public List<DataOfferingDto> getActiveOfferingTextSearch(@PathVariable(name = "text") String text ,  ServerHttpRequest  serverHttpRequest)  {
         try {
             return  dataOfferingService.gettingFedListOfOfferingTextSearch(serverHttpRequest,text);
         } catch (ExecutionException e) {
@@ -159,4 +182,6 @@ public class FederatedController {
         }
         return  null;
     }
+
+
 }

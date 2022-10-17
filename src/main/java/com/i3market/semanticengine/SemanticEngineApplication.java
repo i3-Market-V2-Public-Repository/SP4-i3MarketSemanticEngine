@@ -30,8 +30,6 @@ import java.net.UnknownHostException;
 @EnableMongoRepositories
 public class SemanticEngineApplication  {
 
-
-
     public static void main(final String[] args) {
         final SpringApplication app = new SpringApplication(SemanticEngineApplication.class);
         setProfile(app);

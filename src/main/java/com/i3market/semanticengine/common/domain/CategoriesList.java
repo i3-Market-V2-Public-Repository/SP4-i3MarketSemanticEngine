@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Value;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -14,6 +15,7 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 @JsonDeserialize(builder = CategoriesList.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @AllArgsConstructor
+@Data
 public class CategoriesList {
 
     String name;

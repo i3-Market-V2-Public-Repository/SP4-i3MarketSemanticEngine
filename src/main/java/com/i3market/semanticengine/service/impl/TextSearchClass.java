@@ -7,6 +7,7 @@ import com.i3market.semanticengine.mapper.Mapper;
 import com.i3market.semanticengine.repository.DataOfferingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.TextCriteria;
 import org.springframework.data.mongodb.core.query.TextQuery;
@@ -46,6 +47,17 @@ public class TextSearchClass {
                .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Sorry! no offering found with keyword: " + text)));
 
 
+    }
+    public Flux<DataOfferingDto> getActiveTextSearch(String text , int page , int size){
+        TextCriteria textCriteria = TextCriteria.forDefaultLanguage()
+                .matchingAny(text);
+        Query query = TextQuery.queryText(textCriteria)
+                .sortByScore().addCriteria(Criteria.where("active").is(true));
+        final Flux<DataOffering> data_offering_t = mongoTemplate2.find(query, DataOffering.class);
+        return  data_offering_t.map(e-> mapper.entityToDto(e))
+                .skip(page*size)
+                .take(size)
+                .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Sorry! no offering found with keyword: " + text)));
     }
 
 }
