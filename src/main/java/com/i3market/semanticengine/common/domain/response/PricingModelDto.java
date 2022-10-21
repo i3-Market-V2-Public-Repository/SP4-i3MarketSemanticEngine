@@ -25,7 +25,7 @@ public class PricingModelDto {
 
     String pricingModelName;
 
-    BigDecimal basicPrice;
+    float basicPrice;
 
     String currency;
 

@@ -26,7 +26,7 @@ public class RequestPricingModel {
     @NotNull(message = "basicPrice is required")
     @NotBlank(message = "basicPrice is required")
     @NotEmpty(message = "basicPrice is required")
-    BigDecimal basicPrice;
+    float basicPrice;
 
     @NotNull(message = "currency is required")
     @NotBlank(message = "currency is required")

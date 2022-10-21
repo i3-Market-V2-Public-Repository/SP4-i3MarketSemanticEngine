@@ -409,7 +409,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
    // @Async("asyncExecutor")
 
-    public Flux<DataOfferingDto> gettingfromAnotherNodeByCategory(String category , ServerHttpRequest serverHttpRequest  )   {
+    public List<DataOfferingDto> gettingfromAnotherNodeByCategory(String category , ServerHttpRequest serverHttpRequest  )   {
 
 //        String address = null;
 //        String key = "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26";
@@ -490,7 +490,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
         }
 
-        return Flux.fromIterable(ArrList).switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Sorry no offering found with "+category+ " category")));
+        return ArrList;
 
     }
 

@@ -17,7 +17,7 @@ public class PricingModel implements Serializable {
 
     String pricingModelName;
 
-    BigDecimal basicPrice;
+    float basicPrice;
 
     String currency;
 

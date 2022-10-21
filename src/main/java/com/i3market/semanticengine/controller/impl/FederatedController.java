@@ -36,7 +36,7 @@ public class FederatedController {
 
 
     @GetMapping("/federated-offering/{category}")
-    public Flux<DataOfferingDto> getOfferingByCategory(@PathVariable(name = "category") String category , ServerHttpRequest serverHttpRequest ){
+    public List<DataOfferingDto> getOfferingByCategory(@PathVariable(name = "category") String category , ServerHttpRequest serverHttpRequest ){
 
        return dataOfferingService.gettingfromAnotherNodeByCategory(category , serverHttpRequest);
 

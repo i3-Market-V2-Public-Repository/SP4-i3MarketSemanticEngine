@@ -140,10 +140,23 @@ public class MapperImpl implements Mapper {
 
     private LicenseGrant requestToEntity(final RequestLicenseGrant request) {
         return LicenseGrant.builder()
-                .copyData(request.isCopyData())
+//                .copyData(request.isCopyData())
                 .transferable(request.isTransferable())
                 .exclusiveness(request.isExclusiveness())
+                .paidUp(request.isPaidUp())
                 .revocable(request.isRevocable())
+                .processing(request.isProcessing())
+                .modifying(request.isModifying())
+                .analyzing(request.isAnalyzing())
+                .storingData(request.isStoringData())
+                .storingCopy(request.isStoringCopy())
+                .reproducing(request.isReproducing())
+                .distributing(request.isDistributing())
+                .loaning(request.isLoaning())
+                .selling(request.isSelling())
+                .renting(request.isRenting())
+                .furtherLicensing(request.isFurtherLicensing())
+                .leasing(request.isLeasing())
                 .build();
     }
 
@@ -334,11 +347,25 @@ public class MapperImpl implements Mapper {
 
     private LicenseGrantDto entityToDto(final LicenseGrant entity) {
         return LicenseGrantDto.builder()
-                .copyData(entity.isCopyData())
+//                .copyData(entity.isCopyData())
                 .transferable(entity.isTransferable())
                 .exclusiveness(entity.isExclusiveness())
+                .paidUp(entity.isPaidUp())
                 .revocable(entity.isRevocable())
+                .processing(entity.isProcessing())
+                .modifying(entity.isModifying())
+                .analyzing(entity.isAnalyzing())
+                .storingData(entity.isStoringData())
+                .storingCopy(entity.isStoringCopy())
+                .reproducing(entity.isReproducing())
+                .distributing(entity.isDistributing())
+                .loaning(entity.isLoaning())
+                .selling(entity.isSelling())
+                .renting(entity.isRenting())
+                .furtherLicensing(entity.isFurtherLicensing())
+                .leasing(entity.isLeasing())
                 .build();
+
     }
 
     private PricingModelDto entityToDto(final PricingModel entity) {
@@ -556,11 +583,25 @@ public class MapperImpl implements Mapper {
 
     private LicenseGrant requestToEntity(final LicenseGrantDto dto) {
         return LicenseGrant.builder()
-                .copyData(dto.isCopyData())
+//                .copyData(dto.isCopyData())
                 .transferable(dto.isTransferable())
                 .exclusiveness(dto.isExclusiveness())
+                .paidUp(dto.isPaidUp())
                 .revocable(dto.isRevocable())
+                .processing(dto.isProcessing())
+                .modifying(dto.isModifying())
+                .analyzing(dto.isAnalyzing())
+                .storingData(dto.isStoringData())
+                .storingCopy(dto.isStoringCopy())
+                .reproducing(dto.isReproducing())
+                .distributing(dto.isDistributing())
+                .loaning(dto.isLoaning())
+                .selling(dto.isSelling())
+                .renting(dto.isRenting())
+                .furtherLicensing(dto.isFurtherLicensing())
+                .leasing(dto.isLeasing())
                 .build();
+
     }
 
     private PricingModel requestToEntity(final PricingModelDto dto) {
