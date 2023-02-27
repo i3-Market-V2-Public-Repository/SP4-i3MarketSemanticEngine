@@ -21,8 +21,8 @@ public class InvalidInputException extends ResponseStatusException {
         super(rawStatusCode, reason, cause);
     }
 
-    @Override
-    public HttpStatus getStatus() {
-        return super.getStatus();
-    }
+//    @Override
+//    public HttpStatus getStatus() {
+//        return super.getStatus();
+//    }
 }

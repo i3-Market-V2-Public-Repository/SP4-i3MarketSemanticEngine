@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.GsonBuilder;
+import com.i3market.semanticengine.cache.DataOfferingCache;
+import com.i3market.semanticengine.cache.NodesCache;
 import com.i3market.semanticengine.common.domain.CategoriesList;
 import com.i3market.semanticengine.common.domain.entity.*;
 import com.i3market.semanticengine.common.domain.request.*;
@@ -23,13 +25,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import okhttp3.*;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -47,8 +50,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DataOfferingServiceImpl implements DataOfferingService {
 
-    @Value("${category-list.url}")
-    private String categoryListUrl;
+//    @Value("${category-list.url}")
+//    private String categoryListUrl;
 
     private final DataOfferingRepository dataOfferingRepository;
 
@@ -57,6 +60,12 @@ public class DataOfferingServiceImpl implements DataOfferingService {
     private final Mapper mapper;
 
     private final WebClient.Builder webClient;
+
+    @Autowired
+    private DataOfferingCache dataOfferingCache;
+
+    @Autowired
+    private NodesCache nodesCache;
 
 
     @Override
@@ -93,12 +102,12 @@ public class DataOfferingServiceImpl implements DataOfferingService {
     @SneakyThrows
     public Mono<DataOfferingDto> createDataOffering(final RequestDataOffering dto, ServerHttpRequest serverHttpRequest) {
 
-        final Flux<CategoriesList> log = webClient.build().get().uri("http://95.211.3.244:7500/data_categories").retrieve()
-                .bodyToFlux(CategoriesList.class)
-                .log(DataOfferingServiceImpl.log.getName(), Level.FINE);
+//        final Flux<CategoriesList> log = webClient.build().get().uri("http://95.211.3.244:7500/data_categories").retrieve()
+//                .bodyToFlux(CategoriesList.class)
+//                .log(DataOfferingServiceImpl.log.getName(), Level.FINE);
 
         System.out.println("Category List");
-        log.subscribe(e-> System.out.println(e));
+//        log.subscribe(e-> System.out.println(e));
       //  System.out.println(serverHttpRequest.getURI());
         final Mono<URI> just = Mono.just(serverHttpRequest.getURI());
        just.subscribe(e->System.out.println("Mono   "+e));
@@ -189,6 +198,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
     @Override
     public Mono<DataOfferingDto> updateDataOffering(final DataOfferingDto body) {
+        dataOfferingCache.clear(body.getDataOfferingId());
         final var currentEntity = dataOfferingRepository.findById(body.getDataOfferingId());
         final var updateEntity = mapper.dtoToEntity(body);
         return currentEntity.log(log.getName(), Level.FINE)
@@ -312,9 +322,11 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
     @Override
     public Mono<Void> deleteDataOfferingById(String offeringId) {
+        dataOfferingCache.clear(offeringId);
         return dataOfferingRepository.findById(offeringId)
                 .map(dataOfferingRepository::delete)
                 .flatMap(e -> e);
+
     }
 
     @Override
@@ -409,7 +421,8 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
    // @Async("asyncExecutor")
 
-    public List<DataOfferingDto> gettingfromAnotherNodeByCategory(String category , ServerHttpRequest serverHttpRequest  )   {
+    public Flux<DataOfferingDto> gettingfromAnotherNodeByCategory(String category , ServerHttpRequest serverHttpRequest ,
+                                                                  int page , int size)   {
 
 //        String address = null;
 //        String key = "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26";
@@ -444,18 +457,20 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         //  address = getURi(serverHttpRequest).get();
         SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
-        final List<String> locations = getLocations(seedsIndex);
+        List<String> locations = new ArrayList<>();
+        if(nodesCache.getValue("nodes").size()==0){
+            locations = getLocations(seedsIndex);
+            nodesCache.adduserValue("nodes",locations);
+        }
+        else{
+            locations = nodesCache.getValue("nodes");
+        }
         locations.stream().forEach(e-> System.out.println(e));
         Set<String> loca = new HashSet<>(locations);
 
-
-        loca.stream().forEach(e-> System.out.println(e));
-
-
         locations.stream().map(e-> e.substring(0,19))
                 .forEach(e-> System.out.println(e));
-        System.out.println(locations.get(0).substring(0, 19));
-        // final Flux<OfferingIdResponse> offeringIdResponseFlux = webClient.build().get().uri("http://95.211.3.250:8082/api/registration/offerings-list").retrieve().bodyToFlux(OfferingIdResponse.class);
+
 
         OkHttpClient client = new OkHttpClient();
 
@@ -463,8 +478,8 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
         System.out.println("Value of size "+ locations.size());
         for(int i=0; i<locations.size();i++){
-            System.out.println("Value of i ="+i);
-            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/offering/"+category).build();
+//            System.out.println("Value of "+i + locations.get(i).substring(0,locations.get(i).length()-5));
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,locations.get(i).length()-5)+":8082/api/registration/offering-P/"+category).build();
 
             ObjectMapper obj = new ObjectMapper();
             String val;
@@ -481,7 +496,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
                     final List<DataOfferingDto> o= obj.readValue(val, obj.getTypeFactory().constructParametricType(List.class, DataOfferingDto.class));
                     System.out.println("After  List");
                     o.stream().forEach(e-> ArrList.add(e));
-                    o.stream().forEach(e-> System.out.println(e.toString()));
+//                    o.stream().forEach(e-> System.out.println(e.toString()));
                 }
 
             } catch (IOException e) {
@@ -489,9 +504,36 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             }
 
         }
+//        // WEBCLIENT
+//        String Api =":8082/api/registration/offering-P/"+category;
+//        final Flux<DataOfferingDto> offeringIdResFlux = webClient.build().get().uri("http://95.211.3.244"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<DataOfferingDto> offeringIdResFlux2 = webClient.build().get().uri("http://95.211.3.249"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<DataOfferingDto> offeringIdResFlux3 = webClient.build().get().uri("http://95.211.3.250"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//        final Flux<DataOfferingDto> offeringIdResFlux4 = webClient.build().get().uri("http://95.211.3.251"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//
+//        final Flux<DataOfferingDto> offeringIdResFlux1 = offeringIdResFlux.concatWith(offeringIdResFlux2).concatWith(offeringIdResFlux3)
+//                .concatWith(offeringIdResFlux4).skip(page*size).take(size);
+//        return offeringIdResFlux1;
 
-        return ArrList;
+        final List<String> nodes = nodesCache.getValue("nodes");
+        nodes.stream().forEach(e-> System.out.println("from cache "+e));
 
+        final List<DataOfferingDto> collect = ArrList.stream().skip(page * size).limit(size).collect(Collectors.toList());
+        return Flux.fromIterable(collect);
     }
 
 
@@ -627,13 +669,21 @@ public class DataOfferingServiceImpl implements DataOfferingService {
     }
 
 
-    public List<OfferingIdRes> gettingListOfOffering(  ServerHttpRequest  serverHttpRequest) throws ExecutionException, InterruptedException {
+    public Flux<OfferingIdRes> gettingListOfOffering(  ServerHttpRequest  serverHttpRequest , int page , int size) throws ExecutionException, InterruptedException {
        String address =getURi(serverHttpRequest).get();
 
         //  address = getURi(serverHttpRequest).get();
         SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250"+ ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
-        final List<String> locations = getLocations(seedsIndex);
+        List<String> locations = new ArrayList<>();
+        if(nodesCache.getValue("nodes").size()==0){
+            locations = getLocations(seedsIndex);
+            nodesCache.adduserValue("nodes",locations);
+        }
+        else{
+            locations = nodesCache.getValue("nodes");
+        }
+
         locations.stream().forEach(e-> System.out.println(e));
         Set<String> loca = new HashSet<>(locations);
 
@@ -653,7 +703,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         System.out.println("Value of size "+ locations.size());
         for(int i=0; i<locations.size();i++){
             System.out.println("Value of i ="+i);
-            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/offerings-list").build();
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,locations.get(i).length()-5)+":8082/api/registration/offerings-list-P").build();
 
             ObjectMapper obj = new ObjectMapper();
             String val;
@@ -674,12 +724,35 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             }
 
         }
-
-        return ArrList;
+        //WEBCLIENT
+//        String Api =":8082/api/registration/offerings-list-P";
+//        final Flux<OfferingIdRes> offeringIdResFlux = webClient.build().get().uri("http://95.211.3.244"+Api).retrieve()
+//                .bodyToFlux(OfferingIdRes.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<OfferingIdRes> offeringIdResFlux2 = webClient.build().get().uri("http://95.211.3.249"+Api).retrieve()
+//                .bodyToFlux(OfferingIdRes.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<OfferingIdRes> offeringIdResFlux3 = webClient.build().get().uri("http://95.211.3.250"+Api).retrieve()
+//                .bodyToFlux(OfferingIdRes.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//        final Flux<OfferingIdRes> offeringIdResFlux4 = webClient.build().get().uri("http://95.211.3.251"+Api).retrieve()
+//                .bodyToFlux(OfferingIdRes.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//        final Flux<OfferingIdRes> offeringIdResFlux1 = offeringIdResFlux.concatWith(offeringIdResFlux2).concatWith(offeringIdResFlux3)
+//                .concatWith(offeringIdResFlux4).skip(page*size).take(size);
+//        return offeringIdResFlux1;
+        final List<OfferingIdRes> collect = ArrList.stream().skip(page * size).limit(size).collect(Collectors.toList());
+        return Flux.fromIterable(collect);
     }
 
 
-    public List<ProviderIdResponse> gettingListOfProviders(  ServerHttpRequest  serverHttpRequest) throws ExecutionException, InterruptedException {
+    public Flux<ProviderIdResponse> gettingListOfProviders(  ServerHttpRequest  serverHttpRequest ) throws ExecutionException, InterruptedException {
         String address =getURi(serverHttpRequest).get();
 
         //  address = getURi(serverHttpRequest).get();
@@ -705,7 +778,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         System.out.println("Value of size "+ locations.size());
         for(int i=0; i<locations.size();i++){
             System.out.println("Value of i ="+i);
-            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/providers-list").build();
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,locations.get(i).length()-5)+":8082/api/registration/providers-lis").build();
 
             ObjectMapper obj = new ObjectMapper();
             String val;
@@ -732,18 +805,50 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             }
 
         }
+        //WEBCLIENT
+//        String Api = ":8082/api/registration/providers-lis";
+//        final Flux<ProviderIdResponse> offeringIdResFlux = webClient.build().get().uri("http://95.211.3.244"+Api).retrieve()
+//                .bodyToFlux(ProviderIdResponse.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<ProviderIdResponse> offeringIdResFlux2 = webClient.build().get().uri("http://95.211.3.249"+Api).retrieve()
+//                .bodyToFlux(ProviderIdResponse.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<ProviderIdResponse> offeringIdResFlux3 = webClient.build().get().uri("http://95.211.3.250"+Api).retrieve()
+//                .bodyToFlux(ProviderIdResponse.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//        final Flux<ProviderIdResponse> offeringIdResFlux4 = webClient.build().get().uri("http://95.211.3.251"+Api).retrieve()
+//                .bodyToFlux(ProviderIdResponse.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//
+//        final Flux<ProviderIdResponse> offeringIdResFlux1 = offeringIdResFlux.concatWith(offeringIdResFlux2).concatWith(offeringIdResFlux3).concatWith(offeringIdResFlux4);
+//        return offeringIdResFlux1;
 
-        return ArrList;
+        return Flux.fromIterable(ArrList);
+
     }
 
 
-    public List<OfferingIdRes> gettingFedListOfOfferingOnSharedNetwork(  ServerHttpRequest  serverHttpRequest) throws ExecutionException, InterruptedException {
+    public Flux<OfferingIdRes> gettingFedListOfOfferingOnSharedNetwork(  ServerHttpRequest  serverHttpRequest , int page , int size) throws ExecutionException, InterruptedException {
         String address =getURi(serverHttpRequest).get();
 
         //  address = getURi(serverHttpRequest).get();
         SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
-        final List<String> locations = getLocations(seedsIndex);
+        List<String> locations = new ArrayList<>();
+        if(nodesCache.getValue("nodes").size()==0){
+            locations = getLocations(seedsIndex);
+            nodesCache.adduserValue("nodes",locations);
+        }
+        else{
+            locations = nodesCache.getValue("nodes");
+        }
+        locations.stream().forEach(e-> System.out.println(e));
         locations.stream().forEach(e-> System.out.println(e));
         Set<String> loca = new HashSet<>(locations);
 
@@ -761,7 +866,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         System.out.println("Value of size "+ locations.size());
         for(int i=0; i<locations.size();i++){
             System.out.println("Value of i ="+i);
-            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/offerings-list/on-SharedNetwork").build();
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,locations.get(i).length()-5)+":8082/api/registration/offerings-list/on-SharedNetwork-P").build();
 
             ObjectMapper obj = new ObjectMapper();
             String val;
@@ -782,18 +887,50 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             }
 
         }
-
-        return ArrList;
+        //WEBCLIENT
+//        String Api = ":8082/api/registration/offerings-list/on-SharedNetwork-P";
+//        final Flux<OfferingIdRes> offeringIdResFlux = webClient.build().get().uri("http://95.211.3.244"+Api).retrieve()
+//                .bodyToFlux(OfferingIdRes.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<OfferingIdRes> offeringIdResFlux2 = webClient.build().get().uri("http://95.211.3.249"+Api).retrieve()
+//                .bodyToFlux(OfferingIdRes.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<OfferingIdRes> offeringIdResFlux3 = webClient.build().get().uri("http://95.211.3.250"+Api).retrieve()
+//                .bodyToFlux(OfferingIdRes.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//        final Flux<OfferingIdRes> offeringIdResFlux4 = webClient.build().get().uri("http://95.211.3.251"+Api).retrieve()
+//                .bodyToFlux(OfferingIdRes.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//
+//        final Flux<OfferingIdRes> offeringIdResFlux1 = offeringIdResFlux.concatWith(offeringIdResFlux2).concatWith(offeringIdResFlux3)
+//                .concatWith(offeringIdResFlux4).skip(page*size).take(size);
+//        return offeringIdResFlux1;
+        final List<OfferingIdRes> collect = ArrList.stream().skip(page * size).limit(size).collect(Collectors.toList());
+        return Flux.fromIterable(collect);
     }
 
 
-    public List<OfferingIdRes> gettingFedListOfOfferingOnActive(  ServerHttpRequest  serverHttpRequest) throws ExecutionException, InterruptedException {
+    public Flux<OfferingIdRes> gettingFedListOfOfferingOnActive(  ServerHttpRequest  serverHttpRequest, int page , int size) throws ExecutionException, InterruptedException {
         String address =getURi(serverHttpRequest).get();
 
         //  address = getURi(serverHttpRequest).get();
         SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
-        final List<String> locations = getLocations(seedsIndex);
+        List<String> locations = new ArrayList<>();
+        if(nodesCache.getValue("nodes").size()==0){
+            locations = getLocations(seedsIndex);
+            nodesCache.adduserValue("nodes",locations);
+        }
+        else{
+            locations = nodesCache.getValue("nodes");
+        }
+        locations.stream().forEach(e-> System.out.println(e));
         locations.stream().forEach(e-> System.out.println(e));
         Set<String> loca = new HashSet<>(locations);
 
@@ -809,12 +946,15 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         List<OfferingIdRes> ArrList = new ArrayList<>();
 
         System.out.println("Value of size "+ locations.size());
+        Flux<OfferingIdRes> log = null;
+
         for(int i=0; i<locations.size();i++){
             System.out.println("Value of i ="+i);
-            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/offerings-list/on-active").build();
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,locations.get(i).length()-5)+":8082/api/registration/offerings-list/on-active-P").build();
 
             ObjectMapper obj = new ObjectMapper();
             String val;
+
             try {
                 final Response execute = client.newCall(request).execute();
                 val =execute.body().string();
@@ -832,18 +972,61 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             }
 
         }
+        //WEBCLIENT
+//        final Flux<OfferingIdRes> offeringIdResFlux = webClient.build().get().uri("http://95.211.3.244:8082/api/registration/offerings-list/on-active-P").retrieve()
+//                .bodyToFlux(OfferingIdRes.class) .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<OfferingIdRes> offeringIdResFlux2 = webClient.build().get().uri("http://95.211.3.249:8082/api/registration/offerings-list/on-active-P").retrieve()
+//                .bodyToFlux(OfferingIdRes.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<OfferingIdRes> offeringIdResFlux3 = webClient.build().get().uri("http://95.211.3.250:8082/api/registration/offerings-list/on-active-P").retrieve()
+//                .bodyToFlux(OfferingIdRes.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//        final Flux<OfferingIdRes> offeringIdResFlux4 = webClient.build().get().uri("http://95.211.3.251:8082/api/registration/offerings-list/on-active-P").retrieve()
+//                .bodyToFlux(OfferingIdRes.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//        final Flux<OfferingIdRes> offeringIdResFlux1 = offeringIdResFlux.concatWith(offeringIdResFlux2).concatWith(offeringIdResFlux3).concatWith(offeringIdResFlux4).skip(page*size).take(size);
+//
+//        return offeringIdResFlux1;
 
-        return ArrList;
+
+        final List<OfferingIdRes> collect = ArrList.stream().skip(page * size).limit(size).collect(Collectors.toList());
+        return Flux.fromIterable(collect);
+
+    }
+
+    private void getFlux(Flux<OfferingIdRes> log) throws InterruptedException {
+        Thread.sleep(50);
+        ArrayList<String> arrayList = new ArrayList<>();
+       log.map(e-> {
+           arrayList.add(e.getOffering());
+           return e;
+       });
+       log.subscribe();
+       arrayList.stream().forEach(e-> System.out.println());
     }
 
 
-    public List<DataOfferingDto> gettingFedListOfOfferingTextSearch(  ServerHttpRequest  serverHttpRequest , String text) throws ExecutionException, InterruptedException {
+    public Flux<DataOfferingDto> gettingFedListOfOfferingTextSearch(  ServerHttpRequest  serverHttpRequest , String text , int page , int size) throws ExecutionException, InterruptedException {
         String address =getURi(serverHttpRequest).get();
 
         //  address = getURi(serverHttpRequest).get();
         SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
-        final List<String> locations = getLocations(seedsIndex);
+        List<String> locations = new ArrayList<>();
+        if(nodesCache.getValue("nodes").size()==0){
+            locations = getLocations(seedsIndex);
+            nodesCache.adduserValue("nodes",locations);
+        }
+        else{
+            locations = nodesCache.getValue("nodes");
+        }
+        locations.stream().forEach(e-> System.out.println(e));
         locations.stream().forEach(e-> System.out.println(e));
         Set<String> loca = new HashSet<>(locations);
 
@@ -863,7 +1046,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         System.out.println("Value of size "+ locations.size());
         for(int i=0; i<locations.size();i++){
             System.out.println("Value of i ="+i);
-            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/textSearch/text/"+text).build();
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,locations.get(i).length()-5)+":8082/api/registration/textSearch/text-P/"+text).build();
 
             ObjectMapper obj = new ObjectMapper();
             String val;
@@ -888,18 +1071,51 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             }
 
         }
+        //WEBCLIENT
+//        String Api =":8082/api/registration/textSearch/text-P/"+text;
+//        final Flux<DataOfferingDto> offeringIdResFlux = webClient.build().get().uri("http://95.211.3.244"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<DataOfferingDto> offeringIdResFlux2 = webClient.build().get().uri("http://95.211.3.249"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<DataOfferingDto> offeringIdResFlux3 = webClient.build().get().uri("http://95.211.3.250"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//        final Flux<DataOfferingDto> offeringIdResFlux4 = webClient.build().get().uri("http://95.211.3.251"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//
+//        final Flux<DataOfferingDto> offeringIdResFlux1 = offeringIdResFlux.concatWith(offeringIdResFlux2).concatWith(offeringIdResFlux3).concatWith(offeringIdResFlux4)
+//                .skip(page*size).take(size);
+//        return offeringIdResFlux1;
 
-        return ArrList;
+        final List<DataOfferingDto> collect = ArrList.stream().skip(page * size).limit(size).collect(Collectors.toList());
+        return Flux.fromIterable(collect);
     }
 
 
-    public List<DataOfferingDto> gettingFedListofActiveOfOfferingTextSearch(  ServerHttpRequest  serverHttpRequest , String text) throws ExecutionException, InterruptedException {
+    public Flux<DataOfferingDto> gettingFedListofActiveOfOfferingTextSearch(  ServerHttpRequest  serverHttpRequest , String text , int page , int size) throws ExecutionException, InterruptedException {
         String address =getURi(serverHttpRequest).get();
 
         //  address = getURi(serverHttpRequest).get();
         SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
-        final List<String> locations = getLocations(seedsIndex);
+        List<String> locations = new ArrayList<>();
+        if(nodesCache.getValue("nodes").size()==0){
+            locations = getLocations(seedsIndex);
+            nodesCache.adduserValue("nodes",locations);
+        }
+        else{
+            locations = nodesCache.getValue("nodes");
+        }
+        locations.stream().forEach(e-> System.out.println(e));
         locations.stream().forEach(e-> System.out.println(e));
         Set<String> loca = new HashSet<>(locations);
 
@@ -919,8 +1135,8 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         System.out.println("Value of size "+ locations.size());
         for(int i=0; i<locations.size();i++){
             System.out.println("Value of i ="+i);
-            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)
-                    +":8082/api/registration/getActiveOfferingByText/"+text +"/text").build();
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,locations.get(i).length()-5)
+                    +":8082/api/registration/getActiveOfferingByText/"+text +"/text-P").build();
 
             ObjectMapper obj = new ObjectMapper();
             String val;
@@ -945,8 +1161,32 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             }
 
         }
+        //WEBCLIENT
+//        String Api =":8082/api/registration/getActiveOfferingByText/"+text +"/text-P";
+//        final Flux<DataOfferingDto> offeringIdResFlux = webClient.build().get().uri("http://95.211.3.244"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<DataOfferingDto> offeringIdResFlux2 = webClient.build().get().uri("http://95.211.3.249"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<DataOfferingDto> offeringIdResFlux3 = webClient.build().get().uri("http://95.211.3.250"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//        final Flux<DataOfferingDto> offeringIdResFlux4 = webClient.build().get().uri("http://95.211.3.251"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//
+//        final Flux<DataOfferingDto> offeringIdResFlux1 = offeringIdResFlux.concatWith(offeringIdResFlux2).concatWith(offeringIdResFlux3)
+//                .concatWith(offeringIdResFlux4).skip(page*size).take(size);
+//        return offeringIdResFlux1;
 
-        return ArrList;
+        return Flux.fromIterable(ArrList);
     }
 
     public List<DataOfferingDto> gettingFedListOfOfferingByProvider(  ServerHttpRequest  serverHttpRequest , String id) throws ExecutionException, InterruptedException {
@@ -955,7 +1195,15 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         //  address = getURi(serverHttpRequest).get();
         SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
-        final List<String> locations = getLocations(seedsIndex);
+        List<String> locations = new ArrayList<>();
+        if(nodesCache.getValue("nodes").size()==0){
+            locations = getLocations(seedsIndex);
+            nodesCache.adduserValue("nodes",locations);
+        }
+        else{
+            locations = nodesCache.getValue("nodes");
+        }
+        locations.stream().forEach(e-> System.out.println(e));
         locations.stream().forEach(e-> System.out.println(e));
         Set<String> loca = new HashSet<>(locations);
 
@@ -975,7 +1223,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         System.out.println("Value of size "+ locations.size());
         for(int i=0; i<locations.size();i++){
             System.out.println("Value of i ="+i);
-            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/offering/"+id+"/providerId").build();
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,locations.get(i).length()-5)+":8082/api/registration/offering/"+id+"/providerId").build();
 
             ObjectMapper obj = new ObjectMapper();
             String val;
@@ -1004,8 +1252,8 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         return ArrList;
     }
 
-
-    public DataOfferingDto gettingFederatedOffering(String offeringID , ServerHttpRequest  serverHttpRequest){
+// by id
+    public Mono<DataOfferingDto> gettingFederatedOffering(String offeringID , ServerHttpRequest  serverHttpRequest){
         String address = null;
         try {
             address = getURi(serverHttpRequest).get();
@@ -1017,19 +1265,31 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
         SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
-        final List<String> locations = getLocations(seedsIndex);
+//        getLocations(seedsIndex);
+//        final List<String> locations =  List.of("http://95.211.3.244", "http://95.211.3.249","http://95.211.3.250","http://95.211.3.251");
+        List<String> locations = new ArrayList<>();
+        if(nodesCache.getValue("nodes").size()==0){
+            locations = getLocations(seedsIndex);
+            nodesCache.adduserValue("nodes",locations);
+        }
+        else{
+            locations = nodesCache.getValue("nodes");
+        }
+        locations.stream().forEach(e-> System.out.println(e));
 
-        locations.stream().map(e-> e.substring(0,19))
-                .forEach(e-> System.out.println(e));
-
-        System.out.println(locations.get(0).substring(0, 19) );
+//        locations.stream().map(e-> e.substring(0,19))
+//                .forEach(e-> System.out.println(e));
+//
+//        System.out.println(locations.get(0).substring(0, 19) );
+        ;
 
         OkHttpClient client = new OkHttpClient();
         DataOfferingDto dataOfferingDto = null;
+        log.info("Offering id : 63c91d9ef762242150a481e3");
         for(int i =0; i<locations.size(); i++){
             Request request = new Request.Builder()
                     .get()
-                    .url(locations.get(i).substring(0,19)+":8082/api/registration/offering/"+offeringID+"/offeringId")
+                    .url(locations.get(i).substring(0,locations.get(i).length()-5)+":8082/api/registration/offering/"+offeringID+"/offeringId")
                     .build();
             ObjectMapper obj = new ObjectMapper();
             String val;
@@ -1056,8 +1316,55 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             }
 
         }
+        //Webclient
 
-        return dataOfferingDto;
+//        final DataOfferingDto value = dataOfferingCache.getValue(offeringID);
+//        if(value.getDataOfferingId()==null) {
+//
+//            log.info("not found in cache");
+//            String Api = ":8082/api/registration/offering/" + offeringID + "/offeringId";
+//            final Mono<DataOfferingDto> offeringIdResFlux = webClient.build().get().uri("http://95.211.3.244" + Api).retrieve()
+//                    .bodyToMono(DataOfferingDto.class)
+//                    .onErrorResume(WebClientResponseException.class,
+//                            ex -> ex.getRawStatusCode() == 404 ? Mono.empty() : Mono.error(ex));
+//            final Mono<DataOfferingDto> offeringIdResFlux2 = webClient.build().get().uri("http://95.211.3.249" + Api).retrieve()
+//                    .bodyToMono(DataOfferingDto.class)
+//                    .onErrorResume(WebClientResponseException.class,
+//                            ex -> ex.getRawStatusCode() == 404 ? Mono.empty() : Mono.error(ex));
+//            final Mono<DataOfferingDto> offeringIdResFlux3 = webClient.build().get().uri("http://95.211.3.250" + Api).retrieve()
+//                    .bodyToMono(DataOfferingDto.class)
+//                    .onErrorResume(WebClientResponseException.class,
+//                            ex -> ex.getRawStatusCode() == 404 ? Mono.empty() : Mono.error(ex));
+//
+//            final Mono<DataOfferingDto> offeringIdResFlux4 = webClient.build().get().uri("http://95.211.3.251" + Api).retrieve()
+//                    .bodyToMono(DataOfferingDto.class)
+//                    .onErrorResume(WebClientResponseException.class,
+//                            ex -> ex.getRawStatusCode() == 404 ? Mono.empty() : Mono.error(ex));
+//
+//            final Flux<DataOfferingDto> dataOfferingDtoFlux = offeringIdResFlux.concatWith(offeringIdResFlux2).concatWith(offeringIdResFlux3)
+//                    .concatWith(offeringIdResFlux4);
+//
+//            final Mono<DataOfferingDto> from = Mono.from(dataOfferingDtoFlux.take(1));
+//            from.subscribe(e -> dataOfferingCache.adduserValue(offeringID, e));
+//
+//            return from;
+//
+//
+//        }
+//        else{
+//            log.info("found in cache");
+//            return Mono.just(value);
+//        }
+
+        return Mono.just(dataOfferingDto);
+    }
+
+    public DataOfferingDto getOfferingCache(String id){
+
+        dataOfferingCache.clear(id);
+
+        return  null;
+
     }
 
 
@@ -1180,13 +1487,21 @@ public class DataOfferingServiceImpl implements DataOfferingService {
        deleteAllOffering();
     }
 
-    public Flux<DataOfferingDto> gettingFedListOfActiveOfferingByCategory(  ServerHttpRequest  serverHttpRequest , String category) throws ExecutionException, InterruptedException {
+    public Flux<DataOfferingDto> gettingFedListOfActiveOfferingByCategory(  ServerHttpRequest  serverHttpRequest , String category,int page,int size) throws ExecutionException, InterruptedException {
         String address =getURi(serverHttpRequest).get();
 
         //  address = getURi(serverHttpRequest).get();
         SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
-        final List<String> locations = getLocations(seedsIndex);
+        List<String> locations = new ArrayList<>();
+        if(nodesCache.getValue("nodes").size()==0){
+            locations = getLocations(seedsIndex);
+            nodesCache.adduserValue("nodes",locations);
+        }
+        else{
+            locations = nodesCache.getValue("nodes");
+        }
+        locations.stream().forEach(e-> System.out.println(e));
         locations.stream().forEach(e-> System.out.println(e));
         Set<String> loca = new HashSet<>(locations);
 
@@ -1206,7 +1521,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         System.out.println("Value of size "+ locations.size());
         for(int i=0; i<locations.size();i++){
             System.out.println("Value of i ="+i);
-            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/ActiveOfferingByCategory/"+category).build();
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,locations.get(i).length()-5)+":8082/api/registration/ActiveOfferingByCategory-P/"+category).build();
 
 
             ObjectMapper obj = new ObjectMapper();
@@ -1232,19 +1547,52 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             }
 
         }
-        return Flux.fromIterable(ArrList)
-                .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND,"Sorry no category with name "+category + " is actively found")));
 
-//        return ArrList;
+        //WEBCLIENT
+//        String Api =":8082/api/registration/ActiveOfferingByCategory-P/"+category;
+//        final Flux<DataOfferingDto> offeringIdResFlux = webClient.build().get().uri("http://95.211.3.244"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<DataOfferingDto> offeringIdResFlux2 = webClient.build().get().uri("http://95.211.3.249"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<DataOfferingDto> offeringIdResFlux3 = webClient.build().get().uri("http://95.211.3.250"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//        final Flux<DataOfferingDto> offeringIdResFlux4 = webClient.build().get().uri("http://95.211.3.251"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//
+//        final Flux<DataOfferingDto> offeringIdResFlux1 = offeringIdResFlux.concatWith(offeringIdResFlux2).concatWith(offeringIdResFlux3)
+//                .concatWith(offeringIdResFlux4).skip(page*size).take(size);
+//        return offeringIdResFlux1;
+
+
+        final List<DataOfferingDto> collect = ArrList.stream().skip(page * size).limit(size).collect(Collectors.toList());
+        return Flux.fromIterable(collect);
     }
 
-    public Flux<DataOfferingDto> gettingFedListOfActiveOfferingByProvider(ServerHttpRequest  serverHttpRequest , String provider) throws ExecutionException, InterruptedException {
+    public Flux<DataOfferingDto> gettingFedListOfActiveOfferingByProvider(ServerHttpRequest  serverHttpRequest , String provider , int page ,int size) throws ExecutionException, InterruptedException {
         String address =getURi(serverHttpRequest).get();
 
         //  address = getURi(serverHttpRequest).get();
         SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
-        final List<String> locations = getLocations(seedsIndex);
+        List<String> locations = new ArrayList<>();
+        if(nodesCache.getValue("nodes").size()==0){
+            locations = getLocations(seedsIndex);
+            nodesCache.adduserValue("nodes",locations);
+        }
+        else{
+            locations = nodesCache.getValue("nodes");
+        }
+        locations.stream().forEach(e-> System.out.println(e));
         locations.stream().forEach(e-> System.out.println(e));
         Set<String> loca = new HashSet<>(locations);
 
@@ -1264,7 +1612,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         System.out.println("Value of size "+ locations.size());
         for(int i=0; i<locations.size();i++){
             System.out.println("Value of i ="+i);
-            Request request = new Request.Builder().get().url(locations.get(i).substring(0,19)+":8082/api/registration/ActiveOfferingByProvider/"+provider+"/providerId").build();
+            Request request = new Request.Builder().get().url(locations.get(i).substring(0,locations.get(i).length()-5)+":8082/api/registration/ActiveOfferingByProvider/"+provider+"/providerId-P").build();
 
 
             ObjectMapper obj = new ObjectMapper();
@@ -1291,13 +1639,35 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
         }
 
-       return Flux.fromIterable(ArrList)
-                .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND,"Sorry no provider with name "+provider + " is actively found")));
+//        String Api = ":8082/api/registration/ActiveOfferingByProvider/"+provider+"/providerId-P";
+//        final Flux<DataOfferingDto> offeringIdResFlux = webClient.build().get().uri("http://95.211.3.244"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<DataOfferingDto> offeringIdResFlux2 = webClient.build().get().uri("http://95.211.3.249"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//        final Flux<DataOfferingDto> offeringIdResFlux3 = webClient.build().get().uri("http://95.211.3.250"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//        final Flux<DataOfferingDto> offeringIdResFlux4 = webClient.build().get().uri("http://95.211.3.251"+Api).retrieve()
+//                .bodyToFlux(DataOfferingDto.class)
+//                .onErrorResume(WebClientResponseException.class,
+//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
+//
+//
+//        final Flux<DataOfferingDto> offeringIdResFlux1 = offeringIdResFlux.concatWith(offeringIdResFlux2).concatWith(offeringIdResFlux3)
+//                .concatWith(offeringIdResFlux4).skip(page*size).take(size);
+//        return offeringIdResFlux1;
 
+        final List<DataOfferingDto> collect = ArrList.stream().skip(page * size).limit(size).collect(Collectors.toList());
+        return Flux.fromIterable(collect);
     }
 
         //----------------------------------------------------------
-
 
     final Comparator<CategoriesList> comparingCategoriesList = Comparator.comparing(e-> e.getName());
     final Comparator<DataOfferingDto> compareOfferingTime = Comparator.comparing(DataOfferingDto::getCreatedAt);

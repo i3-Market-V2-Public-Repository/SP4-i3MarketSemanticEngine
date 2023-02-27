@@ -36,9 +36,11 @@ public class FederatedController {
 
 
     @GetMapping("/federated-offering/{category}")
-    public List<DataOfferingDto> getOfferingByCategory(@PathVariable(name = "category") String category , ServerHttpRequest serverHttpRequest ){
+    public Flux<DataOfferingDto> getOfferingByCategory(@PathVariable(name = "category") String category , ServerHttpRequest serverHttpRequest ,
+                                                       @RequestParam(value = "page", defaultValue = "0") final int page,
+                                                       @RequestParam(value = "size", defaultValue = "5") final int size){
 
-       return dataOfferingService.gettingfromAnotherNodeByCategory(category , serverHttpRequest);
+       return dataOfferingService.gettingfromAnotherNodeByCategory(category , serverHttpRequest,page,size);
 
         //  return ResponseEntity.ok(offering.get());
 
@@ -65,9 +67,11 @@ public class FederatedController {
     }
    // @CrossOrigin(origins = "http://localhost:4200")
     @GetMapping("/federated-offerings-list")
-    public ResponseEntity<List<OfferingIdRes>> getOfferingList( ServerHttpRequest  serverHttpRequest){
+    public ResponseEntity<Flux<OfferingIdRes>> getOfferingList( ServerHttpRequest  serverHttpRequest,
+                                                                @RequestParam(value = "page", defaultValue = "0") final int page,
+                                                                @RequestParam(value = "size", defaultValue = "5") final int size){
         try {
-            return ResponseEntity.ok(dataOfferingService.gettingListOfOffering(serverHttpRequest));
+            return ResponseEntity.ok(dataOfferingService.gettingListOfOffering(serverHttpRequest,page,size));
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -76,7 +80,7 @@ public class FederatedController {
         return null;
     }
     @GetMapping("/federated-providers-list")
-    public ResponseEntity<List<ProviderIdResponse>> getProviderList(ServerHttpRequest  serverHttpRequest){
+    public ResponseEntity<Flux<ProviderIdResponse>> getProviderList(ServerHttpRequest  serverHttpRequest){
         try {
             return ResponseEntity.ok(dataOfferingService.gettingListOfProviders(serverHttpRequest));
         } catch (ExecutionException e) {
@@ -88,9 +92,11 @@ public class FederatedController {
     }
     @GetMapping("/federated-offerings-list/on-SharedNetwork")
     @Operation(summary = "getting offering List on shared network in federated search")
-    public ResponseEntity<List<OfferingIdRes>> getListOnSharedNetwork( ServerHttpRequest  serverHttpRequest){
+    public ResponseEntity<Flux<OfferingIdRes>> getListOnSharedNetwork( ServerHttpRequest  serverHttpRequest,
+                                                                       @RequestParam(value = "page", defaultValue = "0") final int page,
+                                                                       @RequestParam(value = "size", defaultValue = "5") final int size){
         try {
-            return ResponseEntity.ok(dataOfferingService.gettingFedListOfOfferingOnSharedNetwork(serverHttpRequest));
+            return ResponseEntity.ok(dataOfferingService.gettingFedListOfOfferingOnSharedNetwork(serverHttpRequest,page,size));
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -101,9 +107,11 @@ public class FederatedController {
 
     @GetMapping("/federated-offerings-list/on-Active")
     @Operation(summary = "getting offering List on active in federated search")
-    public ResponseEntity<List<OfferingIdRes>> getListOnActive( ServerHttpRequest  serverHttpRequest){
+    public ResponseEntity<Flux<OfferingIdRes>> getListOnActive(ServerHttpRequest  serverHttpRequest ,
+                                                               @RequestParam(value = "page", defaultValue = "0") final int page,
+                                                               @RequestParam(value = "size", defaultValue = "5") final int size){
         try {
-            return ResponseEntity.ok(dataOfferingService.gettingFedListOfOfferingOnActive(serverHttpRequest));
+            return ResponseEntity.ok(dataOfferingService.gettingFedListOfOfferingOnActive(serverHttpRequest,page,size));
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -112,7 +120,7 @@ public class FederatedController {
         return null;
     }
     @GetMapping("/federated-offering/{id}/offeringId")
-    public DataOfferingDto getOffering(@PathVariable(name = "id") String id ,  ServerHttpRequest  serverHttpRequest){
+    public Mono<DataOfferingDto> getOffering(@PathVariable(name = "id") String id ,  ServerHttpRequest  serverHttpRequest){
       return  dataOfferingService.gettingFederatedOffering(id , serverHttpRequest);
     }
 
@@ -135,9 +143,11 @@ public class FederatedController {
     }
 
     @GetMapping("/federated-offering/getActiveOfferingByText/{text}/text")
-    public List<DataOfferingDto> getOfferingTextSearch(@PathVariable(name = "text") String text ,  ServerHttpRequest  serverHttpRequest)  {
+    public Flux<DataOfferingDto> getOfferingTextSearch(@PathVariable(name = "text") String text ,  ServerHttpRequest  serverHttpRequest,
+                                                       @RequestParam(value = "page", defaultValue = "0") final int page,
+                                                       @RequestParam(value = "size", defaultValue = "5") final int size)  {
         try {
-            return  dataOfferingService.gettingFedListofActiveOfOfferingTextSearch(serverHttpRequest,text);
+            return  dataOfferingService.gettingFedListofActiveOfOfferingTextSearch(serverHttpRequest,text,page,size);
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -146,9 +156,11 @@ public class FederatedController {
         return  null;
     }
     @GetMapping("/federated-offering/textSearch/text/{text}")
-    public List<DataOfferingDto> getActiveOfferingTextSearch(@PathVariable(name = "text") String text ,  ServerHttpRequest  serverHttpRequest)  {
+    public Flux<DataOfferingDto> getActiveOfferingTextSearch(@PathVariable(name = "text") String text ,  ServerHttpRequest  serverHttpRequest,
+                                                             @RequestParam(value = "page", defaultValue = "0") final int page,
+                                                             @RequestParam(value = "size", defaultValue = "5") final int size)  {
         try {
-            return  dataOfferingService.gettingFedListOfOfferingTextSearch(serverHttpRequest,text);
+            return  dataOfferingService.gettingFedListOfOfferingTextSearch(serverHttpRequest,text,page,size);
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -158,10 +170,12 @@ public class FederatedController {
     }
 
     @GetMapping("/federated-activeOffering/{category}")
-    public Flux<DataOfferingDto> getActiveOfferingByCategory(@PathVariable(name = "category") String category , ServerHttpRequest serverHttpRequest )  {
+    public Flux<DataOfferingDto> getActiveOfferingByCategory(@PathVariable(name = "category") String category , ServerHttpRequest serverHttpRequest ,
+                                                             @RequestParam(value = "page", defaultValue = "0") final int page,
+                                                             @RequestParam(value = "size", defaultValue = "5") final int size)  {
 
         try {
-            return dataOfferingService.gettingFedListOfActiveOfferingByCategory(  serverHttpRequest, category);
+            return dataOfferingService.gettingFedListOfActiveOfferingByCategory(  serverHttpRequest, category,page,size);
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -172,15 +186,21 @@ public class FederatedController {
 
     }
     @GetMapping("/federated-activeOffering/{id}/providerId")
-    public Flux<DataOfferingDto> getActiveOfferingByProvider(@PathVariable(name = "id") String id , ServerHttpRequest  serverHttpRequest){
+    public Flux<DataOfferingDto> getActiveOfferingByProvider(@PathVariable(name = "id") String id , ServerHttpRequest  serverHttpRequest,
+                                                             @RequestParam(value = "page", defaultValue = "0") final int page,
+                                                             @RequestParam(value = "size", defaultValue = "5") final int size){
         try {
-            return  dataOfferingService.gettingFedListOfActiveOfferingByProvider(serverHttpRequest,id);
+            return  dataOfferingService.gettingFedListOfActiveOfferingByProvider(serverHttpRequest,id, page,size);
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         return  null;
+    }
+    @GetMapping("/fromCache/{id}")
+    public DataOfferingDto getFromCache(@PathVariable(name = "id") String id){
+       return dataOfferingService.getOfferingCache(id);
     }
 
 

@@ -48,6 +48,7 @@ public class TextSearchClass {
 
 
     }
+
     public Flux<DataOfferingDto> getActiveTextSearch(String text , int page , int size){
         TextCriteria textCriteria = TextCriteria.forDefaultLanguage()
                 .matchingAny(text);
