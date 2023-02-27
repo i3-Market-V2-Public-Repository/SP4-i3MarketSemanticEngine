@@ -1265,58 +1265,53 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
         SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
-//        getLocations(seedsIndex);
+        final DataOfferingDto value = dataOfferingCache.getValue(offeringID);
+        if(value.getDataOfferingId()==null) {
+            log.info("from if block");
 //        final List<String> locations =  List.of("http://95.211.3.244", "http://95.211.3.249","http://95.211.3.250","http://95.211.3.251");
-        List<String> locations = new ArrayList<>();
-        if(nodesCache.getValue("nodes").size()==0){
-            locations = getLocations(seedsIndex);
-            nodesCache.adduserValue("nodes",locations);
-        }
-        else{
-            locations = nodesCache.getValue("nodes");
-        }
-        locations.stream().forEach(e-> System.out.println(e));
-
-//        locations.stream().map(e-> e.substring(0,19))
-//                .forEach(e-> System.out.println(e));
-//
-//        System.out.println(locations.get(0).substring(0, 19) );
-        ;
-
-        OkHttpClient client = new OkHttpClient();
-        DataOfferingDto dataOfferingDto = null;
-        log.info("Offering id : 63c91d9ef762242150a481e3");
-        for(int i =0; i<locations.size(); i++){
-            Request request = new Request.Builder()
-                    .get()
-                    .url(locations.get(i).substring(0,locations.get(i).length()-5)+":8082/api/registration/offering/"+offeringID+"/offeringId")
-                    .build();
-            ObjectMapper obj = new ObjectMapper();
-            String val;
-            try {
-                final Response execute = client.newCall(request).execute();
-
-                System.out.println(i+"  Value of code "+ execute.code());
-                if(execute.code()!=404){
-                    val =execute.body().string();
-                    obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-                    obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES,true);
-                    obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE,true);
-                    obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                    obj.registerModule( new JavaTimeModule());
-                    dataOfferingDto = obj.readValue(val, DataOfferingDto.class);
-                    break;
-                }
-                else if(i== locations.size() -1 && execute.code()==404){
-                    throw new NotFoundException(HttpStatus.NOT_FOUND, "Sorry Offering Id not found");
-                }
-
-            } catch (IOException e) {
-                e.printStackTrace();
+            List<String> locations = new ArrayList<>();
+            if (nodesCache.getValue("nodes").size() == 0) {
+                locations = getLocations(seedsIndex);
+                nodesCache.adduserValue("nodes", locations);
+            } else {
+                locations = nodesCache.getValue("nodes");
             }
+            locations.stream().forEach(e -> System.out.println(e));
 
-        }
-        //Webclient
+            OkHttpClient client = new OkHttpClient();
+            DataOfferingDto dataOfferingDto = null;
+            log.info("Offering id : 63c91d9ef762242150a481e3");
+            for (int i = 0; i < locations.size(); i++) {
+                Request request = new Request.Builder()
+                        .get()
+                        .url(locations.get(i).substring(0, locations.get(i).length() - 5) + ":8082/api/registration/offering/" + offeringID + "/offeringId")
+                        .build();
+                ObjectMapper obj = new ObjectMapper();
+                String val;
+                try {
+                    final Response execute = client.newCall(request).execute();
+
+                    System.out.println(i + "  Value of code " + execute.code());
+                    if (execute.code() != 404) {
+                        val = execute.body().string();
+                        obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+                        obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+                        obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
+                        obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                        obj.registerModule(new JavaTimeModule());
+                        dataOfferingDto = obj.readValue(val, DataOfferingDto.class);
+                        dataOfferingCache.adduserValue(offeringID, dataOfferingDto);
+                        break;
+                    } else if (i == locations.size() - 1 && execute.code() == 404) {
+                        throw new NotFoundException(HttpStatus.NOT_FOUND, "Sorry Offering Id not found");
+                    }
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+            //Webclient
 
 //        final DataOfferingDto value = dataOfferingCache.getValue(offeringID);
 //        if(value.getDataOfferingId()==null) {
@@ -1356,7 +1351,13 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 //            return Mono.just(value);
 //        }
 
-        return Mono.just(dataOfferingDto);
+
+            return Mono.just(dataOfferingDto);
+        }
+        else{
+            log.info("from else block");
+            return Mono.just(value);
+        }
     }
 
     public DataOfferingDto getOfferingCache(String id){
