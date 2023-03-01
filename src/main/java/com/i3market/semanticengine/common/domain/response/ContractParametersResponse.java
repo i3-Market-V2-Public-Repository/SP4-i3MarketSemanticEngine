@@ -9,7 +9,7 @@ import lombok.Value;
 @Value
 @Builder(builderClassName = "Builder", toBuilder = true)
 @JsonDeserialize(builder = ContractParametersResponse.Builder.class)
-@ToString(onlyExplicitlyIncluded = true)
+//@ToString(onlyExplicitlyIncluded = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ContractParametersResponse {
     
@@ -27,7 +27,7 @@ public class ContractParametersResponse {
 
     boolean personalData;
 
-    @ToString.Include
+//    @ToString.Include
     String category;
 
     String dataOfferingTitle;

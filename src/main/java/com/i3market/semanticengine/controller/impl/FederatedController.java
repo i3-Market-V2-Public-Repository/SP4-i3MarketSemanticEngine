@@ -3,6 +3,7 @@ package com.i3market.semanticengine.controller.impl;
 
 import com.i3market.semanticengine.common.domain.CategoriesList;
 import com.i3market.semanticengine.common.domain.entity.OfferingIdRes;
+import com.i3market.semanticengine.common.domain.response.ContractParametersResponse;
 import com.i3market.semanticengine.common.domain.response.DataOfferingDto;
 import com.i3market.semanticengine.common.domain.response.ProviderIdResponse;
 import com.i3market.semanticengine.exception.NotFoundException;
@@ -47,9 +48,9 @@ public class FederatedController {
 
     }
 
-    @PostMapping("/federated-category/{category}/{key}")
+    @PostMapping("/federated-category/{category}/{key}/{address}")
     public ResponseEntity<Mono<Void>> postingCategory(@PathVariable(name = "category") String category
-            , @PathVariable(name = "key") String key , ServerHttpRequest serverHttpRequest){
+            , @PathVariable(name = "key") String key ,@PathVariable(name = "address") String serverHttpRequest){
         try {
             dataOfferingService.addDataCategory(category, key , serverHttpRequest);
             return ResponseEntity.status(HttpStatus.OK).build();
@@ -122,6 +123,10 @@ public class FederatedController {
     @GetMapping("/federated-offering/{id}/offeringId")
     public Mono<DataOfferingDto> getOffering(@PathVariable(name = "id") String id ,  ServerHttpRequest  serverHttpRequest){
       return  dataOfferingService.gettingFederatedOffering(id , serverHttpRequest);
+    }
+    @GetMapping("/federated-contract-parameter/{id}/offeringId")
+    public Mono<ContractParametersResponse> getContractParameter(@PathVariable(name = "id") String id , ServerHttpRequest  serverHttpRequest){
+        return  dataOfferingService.gettingFederatedContractParameter(id , serverHttpRequest);
     }
 
 
