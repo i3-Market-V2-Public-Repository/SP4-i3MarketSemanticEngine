@@ -12,6 +12,7 @@ import com.i3market.semanticengine.common.domain.CategoriesList;
 import com.i3market.semanticengine.common.domain.entity.*;
 import com.i3market.semanticengine.common.domain.request.*;
 import com.i3market.semanticengine.common.domain.response.*;
+
 import com.i3market.semanticengine.exception.InvalidInputException;
 import com.i3market.semanticengine.exception.NotFoundException;
 import com.i3market.semanticengine.mapper.Mapper;
@@ -26,13 +27,13 @@ import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import okhttp3.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -164,6 +165,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
     @Override
     public Flux<OfferingIdResponse> getOfferingList(final int page, final int size) {
+
         return dataOfferingRepository.findAll()
                 .log(log.getName(), Level.FINE)
                 .map(mapper::entityToDto)
@@ -1403,23 +1405,17 @@ public class DataOfferingServiceImpl implements DataOfferingService {
                 try {
                     final Response execute = client.newCall(request).execute();
 
-//                    System.out.println(i + "  Value of code " + execute.code());
-//                    System.out.println("response "+ execute.body().string());
                     if (execute.code() != 404) {
                         val = execute.body().string();
-                        System.out.println(val);
+
                         obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
                         obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
                         obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
                         obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                         obj.registerModule(new JavaTimeModule());
 
-//                        dataOfferingDto = obj.readValue(val, ContractParametersResponse.class);
-//                        dataOfferingCache.adduserValue(offeringID, dataOfferingDto);
                         final ContractParametersResponse contractParametersResponse = gsonBuilder.create().fromJson(val, ContractParametersResponse.class);
 
-//                        System.out.println("before \n"+ dataOfferingDto.toString());
-//                        System.out.println("gson \n"+ contractParametersResponse.toString());
                         dataOfferingDto = contractParametersResponse;
 
                         break;
@@ -1432,7 +1428,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
                 }
 
             }
-            //Webclient
+            // Webclient
 
 //        final DataOfferingDto value = dataOfferingCache.getValue(offeringID);
 //        if(value.getDataOfferingId()==null) {
@@ -1473,11 +1469,9 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 //        }
 
 
-        System.out.println("before return \n"+ dataOfferingDto.toString());
             return Mono.just(dataOfferingDto);
 //        }
 //        else{
-//            log.info("from else block");
 //            return Mono.just(value);
 //        }
     }
