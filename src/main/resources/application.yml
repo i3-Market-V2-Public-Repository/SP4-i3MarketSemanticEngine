@@ -115,8 +115,11 @@ spring.data.mongodb:
   database: semantic-engine-database
   auto-index-creation: true
 
-
+app.node:
+app.key:
 
 ---
 spring.config.activate.on-profile: test-env
 spring.data.mongodb.host: mongodb
+---
+

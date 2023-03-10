@@ -12,6 +12,7 @@ import com.i3market.semanticengine.common.domain.CategoriesList;
 import com.i3market.semanticengine.common.domain.entity.*;
 import com.i3market.semanticengine.common.domain.request.*;
 import com.i3market.semanticengine.common.domain.response.*;
+
 import com.i3market.semanticengine.exception.InvalidInputException;
 import com.i3market.semanticengine.exception.NotFoundException;
 import com.i3market.semanticengine.mapper.Mapper;
@@ -26,13 +27,13 @@ import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import okhttp3.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -164,6 +165,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
     @Override
     public Flux<OfferingIdResponse> getOfferingList(final int page, final int size) {
+
         return dataOfferingRepository.findAll()
                 .log(log.getName(), Level.FINE)
                 .map(mapper::entityToDto)
@@ -485,6 +487,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             String val;
             try {
                 final Response execute = client.newCall(request).execute();
+                System.out.println(execute.toString());
                 if(execute.code()!=404){
                     val =execute.body().string();
 //                    System.out.println("Val : '\n"+ val);
@@ -541,10 +544,10 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
 
     @Async("asyncExecutor")
-    public Mono<Void> addDataCategory(String category , String key , ServerHttpRequest serverHttpRequest) {
-        System.out.println(serverHttpRequest.getURI());
-        final String substring = String.valueOf(serverHttpRequest.getURI()).substring(0, 19);
-        System.out.println("URI  "+substring);
+    public Mono<Void> addDataCategory(String category , String key , String substring) {
+//        System.out.println(serverHttpRequest.getURI());
+//        final String substring = String.valueOf(serverHttpRequest.getURI()).substring(0, 19);
+//        System.out.println("URI  "+substring);
 
         String address =substring+":8545";
 
@@ -1278,6 +1281,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             }
             locations.stream().forEach(e -> System.out.println(e));
 
+
             OkHttpClient client = new OkHttpClient();
             DataOfferingDto dataOfferingDto = null;
             log.info("Offering id : 63c91d9ef762242150a481e3");
@@ -1359,6 +1363,119 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             return Mono.just(value);
         }
     }
+
+    public Mono<ContractParametersResponse> gettingFederatedContractParameter(String offeringID , ServerHttpRequest  serverHttpRequest){
+        String address = null;
+        try {
+            address = getURi(serverHttpRequest).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250" + ":8545",
+                "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+//        final DataOfferingDto value = dataOfferingCache.getValue(offeringID);
+//        if(value.getDataOfferingId()==null) {
+            log.info("from if block");
+//        final List<String> locations =  List.of("http://95.211.3.244", "http://95.211.3.249","http://95.211.3.250","http://95.211.3.251");
+            List<String> locations = new ArrayList<>();
+            if (nodesCache.getValue("nodes").size() == 0) {
+                locations = getLocations(seedsIndex);
+                nodesCache.adduserValue("nodes", locations);
+            } else {
+                locations = nodesCache.getValue("nodes");
+            }
+            locations.stream().forEach(e -> System.out.println(e));
+
+
+            OkHttpClient client = new OkHttpClient();
+            ContractParametersResponse dataOfferingDto = null ;
+            log.info("Offering id : 63c91d9ef762242150a481e3");
+            for (int i = 0; i < locations.size(); i++) {
+                System.out.println(locations.get(i).substring(0, locations.get(i).length() - 5) );
+                Request request = new Request.Builder()
+                        .get()
+                        .url(locations.get(i).substring(0, locations.get(i).length() - 5) + ":8082/api/registration/contract-parameter/" + offeringID + "/offeringId")
+                        .build();
+                ObjectMapper obj = new ObjectMapper();
+                GsonBuilder gsonBuilder = new GsonBuilder();
+                String val;
+                try {
+                    final Response execute = client.newCall(request).execute();
+
+                    if (execute.code() != 404) {
+                        val = execute.body().string();
+
+                        obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+                        obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+                        obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
+                        obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                        obj.registerModule(new JavaTimeModule());
+
+                        final ContractParametersResponse contractParametersResponse = gsonBuilder.create().fromJson(val, ContractParametersResponse.class);
+
+                        dataOfferingDto = contractParametersResponse;
+
+                        break;
+                    } else if (i == locations.size() - 1 && execute.code() == 404) {
+                        throw new NotFoundException(HttpStatus.NOT_FOUND, "Sorry Offering Id not found");
+                    }
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+            // Webclient
+
+//        final DataOfferingDto value = dataOfferingCache.getValue(offeringID);
+//        if(value.getDataOfferingId()==null) {
+//
+//            log.info("not found in cache");
+//            String Api = ":8082/api/registration/offering/" + offeringID + "/offeringId";
+//            final Mono<DataOfferingDto> offeringIdResFlux = webClient.build().get().uri("http://95.211.3.244" + Api).retrieve()
+//                    .bodyToMono(DataOfferingDto.class)
+//                    .onErrorResume(WebClientResponseException.class,
+//                            ex -> ex.getRawStatusCode() == 404 ? Mono.empty() : Mono.error(ex));
+//            final Mono<DataOfferingDto> offeringIdResFlux2 = webClient.build().get().uri("http://95.211.3.249" + Api).retrieve()
+//                    .bodyToMono(DataOfferingDto.class)
+//                    .onErrorResume(WebClientResponseException.class,
+//                            ex -> ex.getRawStatusCode() == 404 ? Mono.empty() : Mono.error(ex));
+//            final Mono<DataOfferingDto> offeringIdResFlux3 = webClient.build().get().uri("http://95.211.3.250" + Api).retrieve()
+//                    .bodyToMono(DataOfferingDto.class)
+//                    .onErrorResume(WebClientResponseException.class,
+//                            ex -> ex.getRawStatusCode() == 404 ? Mono.empty() : Mono.error(ex));
+//
+//            final Mono<DataOfferingDto> offeringIdResFlux4 = webClient.build().get().uri("http://95.211.3.251" + Api).retrieve()
+//                    .bodyToMono(DataOfferingDto.class)
+//                    .onErrorResume(WebClientResponseException.class,
+//                            ex -> ex.getRawStatusCode() == 404 ? Mono.empty() : Mono.error(ex));
+//
+//            final Flux<DataOfferingDto> dataOfferingDtoFlux = offeringIdResFlux.concatWith(offeringIdResFlux2).concatWith(offeringIdResFlux3)
+//                    .concatWith(offeringIdResFlux4);
+//
+//            final Mono<DataOfferingDto> from = Mono.from(dataOfferingDtoFlux.take(1));
+//            from.subscribe(e -> dataOfferingCache.adduserValue(offeringID, e));
+//
+//            return from;
+//
+//
+//        }
+//        else{
+//            log.info("found in cache");
+//            return Mono.just(value);
+//        }
+
+
+            return Mono.just(dataOfferingDto);
+//        }
+//        else{
+//            return Mono.just(value);
+//        }
+    }
+
 
     public DataOfferingDto getOfferingCache(String id){
 
