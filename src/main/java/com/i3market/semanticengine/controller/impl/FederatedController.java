@@ -1,6 +1,7 @@
 package com.i3market.semanticengine.controller.impl;
 
 
+import com.i3market.semanticengine.cache.OfferingListCache;
 import com.i3market.semanticengine.common.domain.CategoriesList;
 import com.i3market.semanticengine.common.domain.entity.OfferingIdRes;
 import com.i3market.semanticengine.common.domain.response.ContractParametersResponse;
@@ -11,6 +12,7 @@ import com.i3market.semanticengine.service.impl.DataOfferingServiceImpl;
 import com.i3market.semanticengine.service.impl.TextSearchClass;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +36,9 @@ public class FederatedController {
 
     @Autowired
     private DataOfferingServiceImpl dataOfferingService;
+
+    @Autowired
+    private OfferingListCache offeringListCache;
 
 
     @GetMapping("/federated-offering/{category}")
@@ -81,9 +86,11 @@ public class FederatedController {
         return null;
     }
     @GetMapping("/federated-providers-list")
-    public ResponseEntity<Flux<ProviderIdResponse>> getProviderList(ServerHttpRequest  serverHttpRequest){
+    public ResponseEntity<Flux<ProviderIdResponse>> getProviderList(ServerHttpRequest  serverHttpRequest ,
+                                                                     @RequestParam(value = "page", defaultValue = "0") final int page,
+                                                                     @RequestParam(value = "size", defaultValue = "5") final int size){
         try {
-            return ResponseEntity.ok(dataOfferingService.gettingListOfProviders(serverHttpRequest));
+            return ResponseEntity.ok(dataOfferingService.gettingListOfProviders(serverHttpRequest , page , size));
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -203,10 +210,25 @@ public class FederatedController {
         }
         return  null;
     }
-    @GetMapping("/fromCache/{id}")
-    public DataOfferingDto getFromCache(@PathVariable(name = "id") String id){
-       return dataOfferingService.getOfferingCache(id);
+    @GetMapping("/ClearCache/{all}")
+    public ResponseEntity<Object> getFromCache(@PathVariable(name = "all") boolean all){
+        dataOfferingService.ClearCache(all);
+      return  ResponseEntity.status(HttpStatus.OK).build();
     }
 
+    @GetMapping("/getCacheTest")
+    public List<OfferingIdRes> getTest(@RequestParam(name = "page") int page , @RequestParam(name = "size") int size){
 
+        final Pair<String, String> of = Pair.of(String.valueOf(page), String.valueOf(size));
+
+        final List<OfferingIdRes> value = offeringListCache.getValue(of);
+        if(value.isEmpty()){
+//            offeringListCache.addValue(of ,List.of("Value of page "+String.valueOf(page )+ " Value of size "+ size));
+
+            return List.of();
+        }
+        else {
+            return value;
+        }
+    }
 }

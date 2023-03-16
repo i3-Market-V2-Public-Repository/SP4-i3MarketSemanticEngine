@@ -36,6 +36,9 @@ public class DataOfferingNoPaging {
     private  ReactiveMongoTemplate mongoTemplate2;
 
     @Autowired
+    private  DataProviderRepository providerRepository;
+
+    @Autowired
     public DataOfferingNoPaging(DataOfferingRepository dataOfferingRepository, DataProviderRepository dataProviderRepository, Mapper mapper, ReactiveMongoTemplate mongoTemplate2) {
         this.dataOfferingRepository = dataOfferingRepository;
         this.dataProviderRepository = dataProviderRepository;
@@ -155,8 +158,20 @@ public class DataOfferingNoPaging {
                 .sort(compareOfferingTime.reversed())
                 .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "We are sorry! No data offering found.")))
                 .map(e -> OfferingIdResponse.builder().offering(e.getDataOfferingId()).build());
+
+    }
+    public Flux<ProviderIdResponse> providerList() {
+
+        final Flux<ProviderIdResponse> providerRepo = providerRepository.findAll()
+                .log(log.getName(), Level.FINE)
+//                .skip(page * size).take(size)
+                .map(e -> ProviderIdResponse.builder().provider(e.getProviderId()).build())
+                .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Sorry! there is no provider found")));
+        return providerRepo;
     }
     //get offering by active and provider
+
+
 
 
 

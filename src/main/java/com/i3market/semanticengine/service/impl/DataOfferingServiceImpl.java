@@ -6,8 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.GsonBuilder;
-import com.i3market.semanticengine.cache.DataOfferingCache;
-import com.i3market.semanticengine.cache.NodesCache;
+import com.i3market.semanticengine.cache.*;
 import com.i3market.semanticengine.common.domain.CategoriesList;
 import com.i3market.semanticengine.common.domain.entity.*;
 import com.i3market.semanticengine.common.domain.request.*;
@@ -26,8 +25,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import okhttp3.*;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.scheduling.annotation.Async;
@@ -67,6 +66,14 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
     @Autowired
     private NodesCache nodesCache;
+
+    @Autowired
+    private ContractParameterCache contractParameterCache;
+
+    @Autowired
+    private OfferingListCache offeringListCache;
+    @Autowired
+    private ProviderIDCache providerIDCache;
 
 
     @Override
@@ -139,6 +146,39 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             val = response.body().string();
             System.out.println(val);
             System.out.println(response.code());
+
+
+            //
+
+
+            SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250"+ ":8545",
+                    "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+            List<String> locations = new ArrayList<>();
+            if(nodesCache.getValue("nodes").size()==0){
+                locations = getLocations(seedsIndex);
+                nodesCache.adduserValue("nodes",locations);
+            }
+            else{
+                locations = nodesCache.getValue("nodes");
+            }
+
+            final OkHttpClient okHttpClient = new OkHttpClient();
+            locations.stream().forEach(e-> System.out.println(e));
+
+
+            for(int i=0; i<locations.size();i++) {
+
+                Request request = new Request.Builder().get().url(locations.get(i).substring(0, locations.get(i).length() - 5) + ":8082/api/registration/ClearCache/true").build();
+                final Response execute = okHttpClient.newCall(request).execute();
+                if(execute.code()==200){
+                    log.info("deleted all cache from "+locations.get(i));
+
+
+                }
+
+
+            }
+            ClearCache(true);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -200,14 +240,51 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
     @Override
     public Mono<DataOfferingDto> updateDataOffering(final DataOfferingDto body) {
-        dataOfferingCache.clear(body.getDataOfferingId());
-        final var currentEntity = dataOfferingRepository.findById(body.getDataOfferingId());
-        final var updateEntity = mapper.dtoToEntity(body);
-        return currentEntity.log(log.getName(), Level.FINE)
-                .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Were are sorry! Data Offering id" + body.getDataOfferingId() + " does not exist")))
-                .map(e -> offeringTransform(updateEntity, e).toBuilder().updatedAt(Instant.now()).build())
-                .flatMap(dataOfferingRepository::save)
-                .map(mapper::entityToDto);
+
+        try{
+            SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250"+ ":8545",
+                    "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+            List<String> locations = new ArrayList<>();
+            if(nodesCache.getValue("nodes").size()==0){
+                locations = getLocations(seedsIndex);
+                nodesCache.adduserValue("nodes",locations);
+            }
+            else{
+                locations = nodesCache.getValue("nodes");
+            }
+
+            final OkHttpClient okHttpClient = new OkHttpClient();
+            locations.stream().forEach(e-> System.out.println(e));
+
+
+            for(int i=0; i<locations.size();i++) {
+
+                Request request = new Request.Builder().get().url(locations.get(i).substring(0, locations.get(i).length() - 5) + ":8082/api/registration/ClearCache/false").build();
+                final Response execute = okHttpClient.newCall(request).execute();
+                if(execute.code()==200){
+                    log.info("deleted all cache from "+locations.get(i));
+
+
+                }
+
+
+            }
+            ClearCache(false);
+        }
+        catch (Exception e){
+
+        }
+        finally {
+            dataOfferingCache.clear(body.getDataOfferingId());
+            final var currentEntity = dataOfferingRepository.findById(body.getDataOfferingId());
+            final var updateEntity = mapper.dtoToEntity(body);
+            return currentEntity.log(log.getName(), Level.FINE)
+                    .switchIfEmpty(Mono.error(new NotFoundException(HttpStatus.NOT_FOUND, "Were are sorry! Data Offering id" + body.getDataOfferingId() + " does not exist")))
+                    .map(e -> offeringTransform(updateEntity, e).toBuilder().updatedAt(Instant.now()).build())
+                    .flatMap(dataOfferingRepository::save)
+                    .map(mapper::entityToDto);
+        }
+
     }
 
 //    public Mono<DataOfferingDto> updateDataOffering(final DataOfferingDto body){
@@ -324,10 +401,45 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
     @Override
     public Mono<Void> deleteDataOfferingById(String offeringId) {
-        dataOfferingCache.clear(offeringId);
-        return dataOfferingRepository.findById(offeringId)
-                .map(dataOfferingRepository::delete)
-                .flatMap(e -> e);
+        try{
+            SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250"+ ":8545",
+                    "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+            List<String> locations = new ArrayList<>();
+            if(nodesCache.getValue("nodes").size()==0){
+                locations = getLocations(seedsIndex);
+                nodesCache.adduserValue("nodes",locations);
+            }
+            else{
+                locations = nodesCache.getValue("nodes");
+            }
+
+            final OkHttpClient okHttpClient = new OkHttpClient();
+            locations.stream().forEach(e-> System.out.println(e));
+
+
+            for(int i=0; i<locations.size();i++) {
+
+                Request request = new Request.Builder().get().url(locations.get(i).substring(0, locations.get(i).length() - 5) + ":8082/api/registration/ClearCache/true").build();
+                final Response execute = okHttpClient.newCall(request).execute();
+                if(execute.code()==200){
+                    log.info("deleted all cache from "+locations.get(i));
+
+
+                }
+
+
+            }
+            ClearCache(true);
+        }
+        catch (Exception e){
+
+        }
+        finally {
+            return dataOfferingRepository.findById(offeringId)
+                    .map(dataOfferingRepository::delete)
+                    .flatMap(e -> e);
+        }
+
 
     }
 
@@ -699,69 +811,69 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         System.out.println(locations.get(0).substring(0, 19));
        // final Flux<OfferingIdResponse> offeringIdResponseFlux = webClient.build().get().uri("http://95.211.3.250:8082/api/registration/offerings-list").retrieve().bodyToFlux(OfferingIdResponse.class);
 
-        OkHttpClient client = new OkHttpClient();
+         Pair<String, String> pair = Pair.of(String.valueOf(page), String.valueOf(size));
+        final List<OfferingIdRes> value = offeringListCache.getValue(pair);
 
-        List<OfferingIdRes> ArrList = new ArrayList<>();
 
-        System.out.println("Value of size "+ locations.size());
-        for(int i=0; i<locations.size();i++){
-            System.out.println("Value of i ="+i);
-            Request request = new Request.Builder().get().url(locations.get(i).substring(0,locations.get(i).length()-5)+":8082/api/registration/offerings-list-P").build();
+        if(value.isEmpty()) {
 
-            ObjectMapper obj = new ObjectMapper();
-            String val;
-            try {
-                final Response execute = client.newCall(request).execute();
-                val =execute.body().string();
-                System.out.println( val);
-                obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-                obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES,true);
-                obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE,true);
-                obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                final List<OfferingIdRes> o= obj.readValue(val, obj.getTypeFactory().constructParametricType(List.class, OfferingIdRes.class));
-                System.out.println("After  List");
-                o.stream().forEach(e-> ArrList.add(e));
-                o.stream().forEach(e-> System.out.println(e.toString()));
-            } catch (IOException e) {
-                e.printStackTrace();
+            log.info("not found in cache");
+            OkHttpClient client = new OkHttpClient();
+
+            List<OfferingIdRes> ArrList = new ArrayList<>();
+
+            System.out.println("Value of size " + locations.size());
+            for (int i = 0; i < locations.size(); i++) {
+                System.out.println("Value of i =" + i);
+                Request request = new Request.Builder().get().url(locations.get(i).substring(0, locations.get(i).length() - 5) + ":8082/api/registration/offerings-list-P").build();
+
+                ObjectMapper obj = new ObjectMapper();
+                String val;
+                try {
+                    final Response execute = client.newCall(request).execute();
+                    if(execute.code()==200) {
+                        val = execute.body().string();
+                        System.out.println(val);
+                        obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+                        obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+                        obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
+                        obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                        final List<OfferingIdRes> o = obj.readValue(val, obj.getTypeFactory().constructParametricType(List.class, OfferingIdRes.class));
+                        System.out.println("After  List");
+                        o.stream().forEach(e -> ArrList.add(e));
+//                        o.stream().forEach(e -> System.out.println(e.toString()));
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
             }
 
+            final List<OfferingIdRes> collect = ArrList.stream().skip(page * size).limit(size).collect(Collectors.toList());
+            offeringListCache.addValue(pair,collect);
+            log.info("Size of cache "+offeringListCache.CacheTimeOut());
+            return Flux.fromIterable(collect);
         }
-        //WEBCLIENT
-//        String Api =":8082/api/registration/offerings-list-P";
-//        final Flux<OfferingIdRes> offeringIdResFlux = webClient.build().get().uri("http://95.211.3.244"+Api).retrieve()
-//                .bodyToFlux(OfferingIdRes.class)
-//                .onErrorResume(WebClientResponseException.class,
-//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
-//        final Flux<OfferingIdRes> offeringIdResFlux2 = webClient.build().get().uri("http://95.211.3.249"+Api).retrieve()
-//                .bodyToFlux(OfferingIdRes.class)
-//                .onErrorResume(WebClientResponseException.class,
-//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
-//        final Flux<OfferingIdRes> offeringIdResFlux3 = webClient.build().get().uri("http://95.211.3.250"+Api).retrieve()
-//                .bodyToFlux(OfferingIdRes.class)
-//                .onErrorResume(WebClientResponseException.class,
-//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
-//
-//        final Flux<OfferingIdRes> offeringIdResFlux4 = webClient.build().get().uri("http://95.211.3.251"+Api).retrieve()
-//                .bodyToFlux(OfferingIdRes.class)
-//                .onErrorResume(WebClientResponseException.class,
-//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
-//
-//        final Flux<OfferingIdRes> offeringIdResFlux1 = offeringIdResFlux.concatWith(offeringIdResFlux2).concatWith(offeringIdResFlux3)
-//                .concatWith(offeringIdResFlux4).skip(page*size).take(size);
-//        return offeringIdResFlux1;
-        final List<OfferingIdRes> collect = ArrList.stream().skip(page * size).limit(size).collect(Collectors.toList());
-        return Flux.fromIterable(collect);
+        else{
+            log.info("Found in cache");
+            final List<OfferingIdRes> value1 = offeringListCache.getValue(pair);
+            return Flux.fromIterable(value1);
+        }
     }
 
 
-    public Flux<ProviderIdResponse> gettingListOfProviders(  ServerHttpRequest  serverHttpRequest ) throws ExecutionException, InterruptedException {
-        String address =getURi(serverHttpRequest).get();
-
-        //  address = getURi(serverHttpRequest).get();
+    public Flux<ProviderIdResponse> gettingListOfProviders(  ServerHttpRequest  serverHttpRequest , int page , int size ) throws ExecutionException, InterruptedException {
         SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250"+ ":8545",
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
-        final List<String> locations = getLocations(seedsIndex);
+        List<String> locations = new ArrayList<>();
+        if(nodesCache.getValue("nodes").size()==0){
+            locations = getLocations(seedsIndex);
+            nodesCache.adduserValue("nodes",locations);
+        }
+        else{
+            locations = nodesCache.getValue("nodes");
+        }
+
         locations.stream().forEach(e-> System.out.println(e));
         Set<String> loca = new HashSet<>(locations);
 
@@ -774,65 +886,49 @@ public class DataOfferingServiceImpl implements DataOfferingService {
         System.out.println(locations.get(0).substring(0, 19));
         // final Flux<OfferingIdResponse> offeringIdResponseFlux = webClient.build().get().uri("http://95.211.3.250:8082/api/registration/offerings-list").retrieve().bodyToFlux(OfferingIdResponse.class);
 
-        OkHttpClient client = new OkHttpClient();
+        Pair<String, String> pair = Pair.of(String.valueOf(page), String.valueOf(size));
+        final List<ProviderIdResponse> value = providerIDCache.getValue(pair);
+        if(value.isEmpty()) {
+            log.info("did not found in cache");
+            OkHttpClient client = new OkHttpClient();
 
-        List<ProviderIdResponse> ArrList = new ArrayList<>();
+            List<ProviderIdResponse> ArrList = new ArrayList<>();
 
-        System.out.println("Value of size "+ locations.size());
-        for(int i=0; i<locations.size();i++){
-            System.out.println("Value of i ="+i);
-            Request request = new Request.Builder().get().url(locations.get(i).substring(0,locations.get(i).length()-5)+":8082/api/registration/providers-lis").build();
+            System.out.println("Value of size " + locations.size());
+            for (int i = 0; i < locations.size(); i++) {
+                System.out.println("Value of i =" + i);
+                Request request = new Request.Builder().get().url(locations.get(i).substring(0, locations.get(i).length() - 5) + ":8082/api/registration/providers-list-P").build();
 
-            ObjectMapper obj = new ObjectMapper();
-            String val;
-            try {
-                final Response execute = client.newCall(request).execute();
-                if(execute.code()!=404){
-                    val =execute.body().string();
-                    System.out.println( val);
-                    obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-                    obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES,true);
-                    obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE,true);
-                    obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-//                final List<ProviderIdResponse> o = obj.readValue(val, obj.getTypeFactory().constructParametricType(List.class, ProviderIdResponse.class));
-//                System.out.println("After  List");
-//                o.stream().forEach(e-> ArrList.add(e));
-//                o.stream().forEach(e-> System.out.println(e.getProvider()));
-                    GsonBuilder gsonBuilder = new GsonBuilder();
-                    final ProviderIdResponse[] providerIdResponses = gsonBuilder.create().fromJson(val, ProviderIdResponse[].class);
-                  Arrays.stream(providerIdResponses).forEach(e-> ArrList.add(e));
+                ObjectMapper obj = new ObjectMapper();
+                String val;
+                try {
+                    final Response execute = client.newCall(request).execute();
+                    if (execute.code() == 200) {
+                        val = execute.body().string();
+                        System.out.println(val);
+                        obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+                        obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+                        obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
+                        obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                        final List<ProviderIdResponse> o = obj.readValue(val, obj.getTypeFactory().constructParametricType(List.class, ProviderIdResponse.class));
+                        System.out.println("After  List");
+                        o.stream().forEach(e -> ArrList.add(e));
+                        o.stream().forEach(e -> System.out.println(e.toString()));
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
 
-            } catch (IOException e) {
-                e.printStackTrace();
             }
 
+            final List<ProviderIdResponse> collect = ArrList.stream().skip(page * size).limit(size).collect(Collectors.toList());
+            providerIDCache.addValue(pair,collect);
+            return Flux.fromIterable(collect);
         }
-        //WEBCLIENT
-//        String Api = ":8082/api/registration/providers-lis";
-//        final Flux<ProviderIdResponse> offeringIdResFlux = webClient.build().get().uri("http://95.211.3.244"+Api).retrieve()
-//                .bodyToFlux(ProviderIdResponse.class)
-//                .onErrorResume(WebClientResponseException.class,
-//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
-//        final Flux<ProviderIdResponse> offeringIdResFlux2 = webClient.build().get().uri("http://95.211.3.249"+Api).retrieve()
-//                .bodyToFlux(ProviderIdResponse.class)
-//                .onErrorResume(WebClientResponseException.class,
-//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
-//        final Flux<ProviderIdResponse> offeringIdResFlux3 = webClient.build().get().uri("http://95.211.3.250"+Api).retrieve()
-//                .bodyToFlux(ProviderIdResponse.class)
-//                .onErrorResume(WebClientResponseException.class,
-//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
-//
-//        final Flux<ProviderIdResponse> offeringIdResFlux4 = webClient.build().get().uri("http://95.211.3.251"+Api).retrieve()
-//                .bodyToFlux(ProviderIdResponse.class)
-//                .onErrorResume(WebClientResponseException.class,
-//                        ex -> ex.getRawStatusCode() == 404 ? Flux.empty() : Mono.error(ex));
-//
-//
-//        final Flux<ProviderIdResponse> offeringIdResFlux1 = offeringIdResFlux.concatWith(offeringIdResFlux2).concatWith(offeringIdResFlux3).concatWith(offeringIdResFlux4);
-//        return offeringIdResFlux1;
-
-        return Flux.fromIterable(ArrList);
+        else{
+            log.info("found in cache");
+            return  Flux.fromIterable(value);
+        }
 
     }
 
@@ -1055,7 +1151,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             String val;
             try {
                 final Response execute = client.newCall(request).execute();
-                if(execute.code()!=404){
+                if(execute.code()==200){
                     val =execute.body().string();
 //                    System.out.println("Val : '\n"+ val);
                     obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
@@ -1145,7 +1241,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             String val;
             try {
                 final Response execute = client.newCall(request).execute();
-                if(execute.code()!=404){
+                if(execute.code()==200){
                     val =execute.body().string();
 //                    System.out.println("Val : '\n"+ val);
                     obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
@@ -1270,7 +1366,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
                 "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
         final DataOfferingDto value = dataOfferingCache.getValue(offeringID);
         if(value.getDataOfferingId()==null) {
-            log.info("from if block");
+            log.info("not found in cache");
 //        final List<String> locations =  List.of("http://95.211.3.244", "http://95.211.3.249","http://95.211.3.250","http://95.211.3.251");
             List<String> locations = new ArrayList<>();
             if (nodesCache.getValue("nodes").size() == 0) {
@@ -1296,7 +1392,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
                     final Response execute = client.newCall(request).execute();
 
                     System.out.println(i + "  Value of code " + execute.code());
-                    if (execute.code() != 404) {
+                    if (execute.code() == 200) {
                         val = execute.body().string();
                         obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
                         obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
@@ -1359,7 +1455,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             return Mono.just(dataOfferingDto);
         }
         else{
-            log.info("from else block");
+            log.info("from cache");
             return Mono.just(value);
         }
     }
@@ -1389,46 +1485,50 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             }
             locations.stream().forEach(e -> System.out.println(e));
 
+        final ContractParametersResponse value = contractParameterCache.getValue(offeringID);
 
-            OkHttpClient client = new OkHttpClient();
-            ContractParametersResponse dataOfferingDto = null ;
-            log.info("Offering id : 63c91d9ef762242150a481e3");
-            for (int i = 0; i < locations.size(); i++) {
-                System.out.println(locations.get(i).substring(0, locations.get(i).length() - 5) );
-                Request request = new Request.Builder()
-                        .get()
-                        .url(locations.get(i).substring(0, locations.get(i).length() - 5) + ":8082/api/registration/contract-parameter/" + offeringID + "/offeringId")
-                        .build();
-                ObjectMapper obj = new ObjectMapper();
-                GsonBuilder gsonBuilder = new GsonBuilder();
-                String val;
-                try {
-                    final Response execute = client.newCall(request).execute();
+            if(value.getProvider()==null){
 
-                    if (execute.code() != 404) {
-                        val = execute.body().string();
+                log.info("did not found cache for contractPara "+offeringID);
+                OkHttpClient client = new OkHttpClient();
+                ContractParametersResponse dataOfferingDto = null;
+                log.info("Offering id : 63c91d9ef762242150a481e3");
+                for (int i = 0; i < locations.size(); i++) {
+                    System.out.println(locations.get(i).substring(0, locations.get(i).length() - 5));
+                    Request request = new Request.Builder()
+                            .get()
+                            .url(locations.get(i).substring(0, locations.get(i).length() - 5) + ":8082/api/registration/contract-parameter/" + offeringID + "/offeringId")
+                            .build();
+                    ObjectMapper obj = new ObjectMapper();
+                    GsonBuilder gsonBuilder = new GsonBuilder();
+                    String val;
+                    try {
+                        final Response execute = client.newCall(request).execute();
 
-                        obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-                        obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
-                        obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
-                        obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                        obj.registerModule(new JavaTimeModule());
+                        if (execute.code() == 200) {
+                            val = execute.body().string();
 
-                        final ContractParametersResponse contractParametersResponse = gsonBuilder.create().fromJson(val, ContractParametersResponse.class);
+                            obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+                            obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+                            obj.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
+                            obj.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                            obj.registerModule(new JavaTimeModule());
 
-                        dataOfferingDto = contractParametersResponse;
+                            final ContractParametersResponse contractParametersResponse = gsonBuilder.create().fromJson(val, ContractParametersResponse.class);
 
-                        break;
-                    } else if (i == locations.size() - 1 && execute.code() == 404) {
-                        throw new NotFoundException(HttpStatus.NOT_FOUND, "Sorry Offering Id not found");
+                            dataOfferingDto = contractParametersResponse;
+
+                            break;
+                        } else if (i == locations.size() - 1 && execute.code() == 404) {
+                            throw new NotFoundException(HttpStatus.NOT_FOUND, "Sorry Offering Id not found");
+                        }
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
 
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
-
-            }
-            // Webclient
+                // Webclient
 
 //        final DataOfferingDto value = dataOfferingCache.getValue(offeringID);
 //        if(value.getDataOfferingId()==null) {
@@ -1468,8 +1568,14 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 //            return Mono.just(value);
 //        }
 
-
-            return Mono.just(dataOfferingDto);
+                contractParameterCache.adduserValue(offeringID,dataOfferingDto);
+                return Mono.just(dataOfferingDto);
+            }
+            else{
+                log.info("found Contract Para in Cache "+offeringID);
+                final ContractParametersResponse value1 = contractParameterCache.getValue(offeringID);
+                return  Mono.just(value1);
+            }
 //        }
 //        else{
 //            return Mono.just(value);
@@ -1477,11 +1583,20 @@ public class DataOfferingServiceImpl implements DataOfferingService {
     }
 
 
-    public DataOfferingDto getOfferingCache(String id){
+    public void ClearCache(boolean all){
 
-        dataOfferingCache.clear(id);
+        if(all){
+            dataOfferingCache.clearAll();
+            contractParameterCache.clearAll();
+            offeringListCache.clearAll();
+            log.info("deleted  all cache");
+        }
+        else{
+            dataOfferingCache.clearAll();
+            contractParameterCache.clearAll();
+            log.info("deleted  partial cache");
+        }
 
-        return  null;
 
     }
 

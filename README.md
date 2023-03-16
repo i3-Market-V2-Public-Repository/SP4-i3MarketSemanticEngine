@@ -1,5 +1,5 @@
 # i3-Market Semantics Engine
-# version **2.6.1**
+# version **2.8.1**
 NOTE => If you are going to run semantic-engine in your individual environment 'FOR VERY FIRST TIME ONLY" , please add add environment variables "APP_NODE=YOUR NODE: and "APP_KEY=YOUR KEY" to your container command . Also , please add previous environemnt variables if you are running semantic-engine very first time and not if you are already registered to federated network , also please  run semantic-engine at port 8082 only .
 ## 1. Introduction
 The semantic engine is a data microservice, which can interact with other services of the i3-Market for data offering registration. The semantic engine also provides necessary information such as contract parameters, pricing models, etc for other services and users. The repository of the semantic engine on the i3-Market gitlab can be found [here](https://gitlab.com/i3-market/code/wp4/i3marketsemanticengine_mongodb) . The Swagger reference of the semantic engine itself can be found [here](http://95.211.3.244:3000/explorer/#/registration-offering)

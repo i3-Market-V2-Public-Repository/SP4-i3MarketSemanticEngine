@@ -46,4 +46,7 @@ public class DataOfferingCache {
     public void clear(String username){
         loadingCache.refresh(username);
     }
+    public void clearAll(){
+       loadingCache.invalidateAll();
+    }
 }

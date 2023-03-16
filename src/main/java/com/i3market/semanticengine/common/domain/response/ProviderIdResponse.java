@@ -2,16 +2,17 @@ package com.i3market.semanticengine.common.domain.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import lombok.Builder;
-import lombok.ToString;
-import lombok.Value;
+import lombok.*;
 
-@Value
-@Builder(builderClassName = "Builder", toBuilder = true)
-@JsonDeserialize(builder = ProviderIdResponse.Builder.class)
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@Builder(toBuilder = true)
+//@JsonDeserialize(builder = ProviderIdResponse.Builder.class)
+//@JsonInclude(JsonInclude.Include.NON_NULL)
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
 public class ProviderIdResponse {
 
-    String provider;
+
+   private String provider;
 
 }

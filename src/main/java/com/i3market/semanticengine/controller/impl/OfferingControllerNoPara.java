@@ -77,4 +77,9 @@ public class OfferingControllerNoPara {
     ResponseEntity<Flux<OfferingIdResponse>> getOfferingListonSharedNetwork(){
         return ResponseEntity.ok(dataOfferingNoPaging.getOfferingListonSharedNetwork());
     }
+    @GetMapping("/providers-list-P")
+    @Operation(summary = "GET a list of providers")
+    ResponseEntity<Flux<ProviderIdResponse>> providerList(){
+        return ResponseEntity.ok(dataOfferingNoPaging.providerList());
+    }
 }
