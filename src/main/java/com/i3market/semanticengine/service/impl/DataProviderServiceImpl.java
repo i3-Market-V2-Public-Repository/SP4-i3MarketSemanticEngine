@@ -1,5 +1,9 @@
 package com.i3market.semanticengine.service.impl;
 
+import com.i3market.semanticengine.cache.ContractParameterCache;
+import com.i3market.semanticengine.cache.NodesCache;
+import com.i3market.semanticengine.cache.OfferingListCache;
+import com.i3market.semanticengine.cache.ProviderIDCache;
 import com.i3market.semanticengine.common.domain.entity.DataOffering;
 import com.i3market.semanticengine.common.domain.entity.DataProvider;
 import com.i3market.semanticengine.common.domain.request.RequestDataProvider;
@@ -12,9 +16,15 @@ import com.i3market.semanticengine.mapper.Mapper;
 import com.i3market.semanticengine.repository.DataOfferingRepository;
 import com.i3market.semanticengine.repository.DataProviderRepository;
 import com.i3market.semanticengine.service.DataProviderService;
+import eu.i3market.seedsindex.SearchEngineIndexRecord;
+import eu.i3market.seedsindex.SeedsIndex;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -43,6 +53,17 @@ public class DataProviderServiceImpl implements DataProviderService {
 
     private final Mapper mapper;
 
+    @Autowired
+    private NodesCache nodesCache;
+
+    @Autowired
+    private ContractParameterCache contractParameterCache;
+
+    @Autowired
+    private OfferingListCache offeringListCache;
+    @Autowired
+    private ProviderIDCache providerIDCache;
+
 
     private final SimpleDateFormat simpleFormat = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss");
 
@@ -54,12 +75,69 @@ public class DataProviderServiceImpl implements DataProviderService {
         final DataProvider entity = mapper.requestToEntity(dto);
         entity.setCreatedAt(Instant.now());
         final Mono<DataProvider> newEntity = providerRepository.save(entity);
+        try{
+            SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250"+ ":8545",
+                    "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+            List<String> locations = new ArrayList<>();
+            if(nodesCache.getValue("nodes").size()==0){
+                locations = getLocations(seedsIndex);
+                nodesCache.adduserValue("nodes",locations);
+            }
+            else{
+                locations = nodesCache.getValue("nodes");
+            }
 
-        return newEntity.log(log.getName(), Level.FINE)
-                .onErrorMap(
-                        DuplicateKeyException.class,
-                        ex -> new InvalidInputException(HttpStatus.CONFLICT, "Duplicated data providerId " + dto.getProviderId()))
-                .map(e -> mapper.entityToDto(e));
+            final OkHttpClient okHttpClient = new OkHttpClient();
+            locations.stream().forEach(e-> System.out.println(e));
+
+
+            for(int i=0; i<locations.size();i++) {
+
+                Request request = new Request.Builder().get().url(locations.get(i).substring(0, locations.get(i).length() - 5) + ":8082/api/registration/ClearCache/true").build();
+                final Response execute = okHttpClient.newCall(request).execute();
+                if(execute.code()==200){
+                    log.info("deleted all cache from "+locations.get(i));
+
+
+                }
+
+
+            }
+            providerIDCache.clearAll();
+
+        }
+        catch (Exception e){
+
+        }
+        finally {
+            return newEntity.log(log.getName(), Level.FINE)
+                    .onErrorMap(
+                            DuplicateKeyException.class,
+                            ex -> new InvalidInputException(HttpStatus.CONFLICT, "Duplicated data providerId " + dto.getProviderId()))
+                    .map(e -> mapper.entityToDto(e));
+        }
+
+
+    }
+
+    public  List<String>getLocations(SeedsIndex seedsIndex){
+        List<String>  location= new ArrayList<>();
+        try {
+
+            seedsIndex.init();
+            final Collection<SearchEngineIndexRecord> byDataCategory = seedsIndex.findByDataCategory(null);
+            for(var se : byDataCategory){
+                location.add(String.valueOf(se.getLocation())) ;
+            }
+            return location;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        finally {
+            seedsIndex.shutdown();
+        }
+        return null;
     }
 
     @Override
@@ -73,7 +151,44 @@ public class DataProviderServiceImpl implements DataProviderService {
 
     @Override
     public Mono<Void> deleteAllProvider() {
-        return providerRepository.deleteAll();
+        try{
+//            SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250"+ ":8545",
+//                    "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+//            List<String> locations = new ArrayList<>();
+//            if(nodesCache.getValue("nodes").size()==0){
+//                locations = getLocations(seedsIndex);
+//                nodesCache.adduserValue("nodes",locations);
+//            }
+//            else{
+//                locations = nodesCache.getValue("nodes");
+//            }
+//
+//            final OkHttpClient okHttpClient = new OkHttpClient();
+//            locations.stream().forEach(e-> System.out.println(e));
+//
+//
+//            for(int i=0; i<locations.size();i++) {
+//
+//                Request request = new Request.Builder().get().url(locations.get(i).substring(0, locations.get(i).length() - 5) + ":8082/api/registration/ClearCache/true").build();
+//                final Response execute = okHttpClient.newCall(request).execute();
+//                if(execute.code()==200){
+//                    log.info("deleted all cache from "+locations.get(i));
+//
+//
+//                }
+//
+//
+//            }
+//            providerIDCache.clearAll();
+
+        }
+        catch (Exception e){
+
+        }
+        finally {
+            return providerRepository.deleteAll();
+        }
+
     }
 
     @Override
@@ -83,10 +198,48 @@ public class DataProviderServiceImpl implements DataProviderService {
         if (getOfferings > 0) {
             throw new ConflictException(HttpStatus.CONFLICT, "We are sorry. You can not delete this provider as there are offerings associated with this providerId: " + providerId);
         }
-        return providerRepository.findByProviderId(providerId.toLowerCase())
-                .log(log.getName(), Level.FINE)
-                .map(e -> providerRepository.delete(e))
-                .flatMap(e -> e);
+
+        try{
+//            SeedsIndex seedsIndex = new SeedsIndex("http://95.211.3.250"+ ":8545",
+//                    "0x91ca5769686d3c0ba102f0999140c1946043ecdc1c3b33ee3fd2c80030e46c26");
+//            List<String> locations = new ArrayList<>();
+//            if(nodesCache.getValue("nodes").size()==0){
+//                locations = getLocations(seedsIndex);
+//                nodesCache.adduserValue("nodes",locations);
+//            }
+//            else{
+//                locations = nodesCache.getValue("nodes");
+//            }
+//
+//            final OkHttpClient okHttpClient = new OkHttpClient();
+//            locations.stream().forEach(e-> System.out.println(e));
+//
+//
+//            for(int i=0; i<locations.size();i++) {
+//
+//                Request request = new Request.Builder().get().url(locations.get(i).substring(0, locations.get(i).length() - 5) + ":8082/api/registration/ClearCache/true").build();
+//                final Response execute = okHttpClient.newCall(request).execute();
+//                if(execute.code()==200){
+//                    log.info("deleted all cache from "+locations.get(i));
+//
+//
+//                }
+//
+//
+//            }
+//            providerIDCache.clearAll();
+
+        }
+        catch (Exception e){
+
+        }
+        finally {
+            return providerRepository.findByProviderId(providerId.toLowerCase())
+                    .log(log.getName(), Level.FINE)
+                    .map(e -> providerRepository.delete(e))
+                    .flatMap(e -> e);
+        }
+
     }
 
     @Override

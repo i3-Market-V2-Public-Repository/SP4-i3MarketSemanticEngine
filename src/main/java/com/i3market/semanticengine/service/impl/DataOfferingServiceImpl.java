@@ -96,7 +96,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             }
             categoriesLists.sort(comparingCategoriesList);
 
-            return Flux.fromIterable(categoriesLists);
+            return Flux.fromIterable(categoriesLists.stream().collect(Collectors.toSet()));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -600,7 +600,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             try {
                 final Response execute = client.newCall(request).execute();
                 System.out.println(execute.toString());
-                if(execute.code()!=404){
+                if(execute.code()==200){
                     val =execute.body().string();
 //                    System.out.println("Val : '\n"+ val);
                     obj.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
@@ -888,7 +888,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
 
         Pair<String, String> pair = Pair.of(String.valueOf(page), String.valueOf(size));
         final List<ProviderIdResponse> value = providerIDCache.getValue(pair);
-        if(value.isEmpty()) {
+//        if(value.isEmpty()) {
             log.info("did not found in cache");
             OkHttpClient client = new OkHttpClient();
 
@@ -922,13 +922,14 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             }
 
             final List<ProviderIdResponse> collect = ArrList.stream().skip(page * size).limit(size).collect(Collectors.toList());
-            providerIDCache.addValue(pair,collect);
+//            providerIDCache.addValue(pair,collect);
             return Flux.fromIterable(collect);
-        }
-        else{
-            log.info("found in cache");
-            return  Flux.fromIterable(value);
-        }
+//        }
+//        else{
+//            log.info("found in cache");
+//            final List<ProviderIdResponse> value1 = providerIDCache.getValue(pair);
+//            return  Flux.fromIterable(value1);
+//        }
 
     }
 
@@ -1589,6 +1590,7 @@ public class DataOfferingServiceImpl implements DataOfferingService {
             dataOfferingCache.clearAll();
             contractParameterCache.clearAll();
             offeringListCache.clearAll();
+            providerIDCache.clearAll();
             log.info("deleted  all cache");
         }
         else{
