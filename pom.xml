@@ -83,7 +83,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-common</artifactId>
-            <version>1.6.8</version>
+            <version>1.8.0</version>
         </dependency>
 
 
